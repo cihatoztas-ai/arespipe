@@ -24,6 +24,19 @@
 > (abonelik altyapısına bağlanacak — yeni debt). Avatar upload **client-side** (`arespipe-dosyalar`, path
 > `{tenant_id}/avatar/{id}.jpg`) RLS'ten geçer → **yeni endpoint yok**, 12-tavan korundu. Topbar mark iOS
 > animasyonu bu oturumda dokunulmadı → debt 210'a taşındı (§11).
+>
+> **GÜNCELLEME (oturum 211):** Sıra 9b CANLI — B köprüsü (Denetim footer `yetkili && "Bu Spool'da İşlem Yap"`
+> → düz `/islemler`; **seed-spool İPTAL**, operatör işlem seçip QR okutur, MIsBaslat'a dokunulmadı) +
+> auto-open timing fix (peek drawer async useMemo timing, useRef ile spool başına 1 kez) + MSpoolDetay→`_arsiv/`.
+>
+> **GÜNCELLEME (oturum 212):** (1) **112 migration canlı teyidi** — `kullanicilar.customer_id` FK → customers(id)
+> (`pg_constraint` ile doğrulandı, MK-200.5). Sıra 7 önkoşulunun DB tarafı hazır; **`customer_project_access`
+> tablosu HENÜZ YOK** (2. yarı, 113 migration). (2) **MDevreler kart tap bug ÇÖZÜLDÜ (f9d7429)** — kart giriş
+> animasyonu (`mDvrFadeIn` translateY + stagger delay) iOS'ta hit-test'i kaydırıp tap'i düşürüyordu; animasyon
+> tamamen kaldırıldı. (3) **Sıra 7 (MMusteri) ERTELENDİ** — web-first (Cihat: müşteri ekranı acil değil, web'de
+> yapılıp mobile'a adapte edilecek). (4) **YENİ öncelik-1 iş: mobil layout standardizasyonu** (Sıra 11, §8) —
+> ekranlar ortak layout iskeleti paylaşmıyor: tab bar İş Başlat'ta var/Yönetici anasayfada yok, spool detayda
+> tab bar yok + alt ölü alan. Cihat: "Baştan doğru düzgün, yarım kalmasın."
 
 ---
 
@@ -96,8 +109,9 @@ bloğu var → MIslemler (+ uygulamalar)               [gruplar.length > 0]
 diğer     → MUygulamalar anaSayfaModu (doğrudan)    [else]
 ```
 > Eski "🔒 yetki tanımlanmamış" hata ekranı KALKTI — bloğu olmayan = uygulama kullanıcısı (hata değil).
-> **208 NOT:** `musteriMi` rol-temelli (`yoneticiMi` kalıbı). customers↔kullanicilar bağı DB'de YOK
-> (teşhis 208) → bugün hiç tetiklenmez; §7-3 müşteri turunda bağ kurulup gerçek ekran (MMusteri) gelince dolar.
+> **208 NOT:** `musteriMi` rol-temelli (`yoneticiMi` kalıbı). **212 GÜNCEL:** customers↔kullanicilar bağı
+> DB'de KURULDU (`kullanicilar.customer_id` FK, migration 112) → 208 blokörü kapandı. MMusteri gerçek ekranı
+> web-first ertelendi (Sıra 7); görünürlük için `customer_project_access` tablosu hâlâ gerekli (113 migration).
 
 ---
 
@@ -267,15 +281,17 @@ kalmadı (grep teyitli; kalan eşleşmeler yalnız yorum satırı). Commit `8b93
 | 4 | ✅ **TAMAMLANDI (209)** `MIslemler.jsx`: işlem butonları + Uygulamalar butonu (📚 `/uygulamalar`); 🔒 boş durum kalktı. | §3 |
 | 5 | ✅ **TAMAMLANDI (209)** `MAnasayfaYonetici.jsx`: Uygulamalar linki (5a) + atıl kullanıcı bandı (5b, MK-207.2). | §7-5 |
 | 6 | ✅ **TAMAMLANDI (209)** `MProfil.jsx` (avatar `foto_url`+Storage client upload / bilgiler salt-okunur / şifre reset / hesap-sil soft-delete) + `/profil` route + MProfilSayfasi wrapper + 20×3 i18n. | mockup-first |
-| 7 | `MMusteri.jsx` (yeni — placeholder yerine) | §7-3, mockup-first |
+| 7 | ⏸️ **ERTELENDİ (212)** `MMusteri.jsx` — **web-first** (Cihat): müşteri ekranı önce web'de yapılıp mobile'a adapte. DB önkoşulu 1. yarı ✅ (`kullanicilar.customer_id` FK, migration 112); 2. yarı `customer_project_access` (113) HENÜZ YOK. | §7-3, mockup-first |
 | 8 | Kayıt/davet akışı (kod + DB) | §7-1 — en büyük iş |
 | 9 | ✅ **İLK YARI CANLI (210)** Spool detay çatalı: `/spool/:id` → IbSpoolDetay `mod="denetim"` + Denetim sekmesi (n/N resmi `nNRenkler`, KK&sevk, belge, log); yönetici operatörle aynı ekran + "Yönetici" pill; Malzeme heat salt-okunur; MSpoolDetay emekli (route koptu, dosya duruyor → `_arsiv/` 211). | §6 |
 | 9b | ✅ **CANLI (211)** B köprüsü: Denetim footer `yetkili && "Bu Spool'da İşlem Yap"` → düz `/islemler` (**seed-spool İPTAL** — operatör işlem seçip QR okutur; MIsBaslat'a dokunulmadı). Wrapper'a `bloklar` prop'u. + auto-open timing fix + MSpoolDetay→`_arsiv/`. | §6 |
 | 10 | Kesim/Büküm/Markalama native React işlem ekranları (saha düzeni) | büyük, ayrı turlar |
+| 11 | 🔴 **ÖNCELİK-1 (212'de tanımlandı) — Mobil layout standardizasyonu.** Ekranlar ortak layout iskeleti paylaşmıyor: tab bar İş Başlat'ta VAR / Yönetici anasayfada YOK; spool detayda tab bar yok + alt **ölü boşluk** (içerik 100dvh flex iskeletine oturmamış). Çözüm: tek ortak `MLayout` (topbar + flex:1 scroll içerik + koşullu tab bar). R-10 mockup-first → tüm ekranları geçir. Cihat: "baştan doğru, yarım kalmasın." Detay: CLAUDE-SONRAKI-OTURUM.md §2. | R-10, CLAUDE-MOBILE §9 |
 
-**Sıra 1–6 + 9 + 9b tamamlandı (207–211).** Sonraki: Sıra 7 (MMusteri — önce `customers`↔kullanıcı
-DB bağı, 208 teşhisi: bağ YOK) → Sıra 8 (kayıt akışı, en büyük).
-Devreden debt: topbar animasyon iOS fix (§11) + üyelik paketi abonelik bağı (§11) + avatar canlı teyit (209).
+**Sıra 1–6 + 9 + 9b tamamlandı (207–211).** **213 ana işi: Sıra 11 (layout standardizasyonu, öncelik-1).**
+Sonra: Sıra 8 (kayıt akışı, en büyük) · Sıra 7 (MMusteri, web-first ertelendi).
+Devreden debt: MDevreler ölü keyframe `mDvrFadeIn` temizliği · topbar animasyon iOS fix (§11) · üyelik paketi
+abonelik bağı (§11) · avatar canlı teyit (209).
 
 ---
 
@@ -300,6 +316,14 @@ Devreden debt: topbar animasyon iOS fix (§11) + üyelik paketi abonelik bağı 
 - **(209) `gpc` davranışı:** commit'i kendi yapıp ikinci kez "nothing to commit"te zinciri kesiyor (non-zero
   exit → `&& gp` atlanır). Workaround: ayrı `git commit` + tek başına `gp`. Çift-uygulanan Python patch
   anchor'ı 0 bulup ABORT eder (zararsız, `.bak` almadan durur — MK-111.2 koruması).
+- **(212) Mount animasyonu tap'i düşürebilir:** Tıklanabilir kartlarda giriş animasyonu `transform`/`translateY`
+  KULLANMA — animasyon oturana kadar iOS hit-test bölgesi kayar, tek dokunuş elemana ulaşmaz (kullanıcı 5-6 kez
+  basar). Sadece `opacity` fade güvenli, ya da hiç animasyon. Stagger `animationDelay` sorunu büyütür (alt
+  kartlarda pencere uzar). Semptom: "karta basıyorum açmıyor, ısrarla basınca açılıyor."
+- **(212) JSX doğrulaması = `mobile/node_modules` içi esbuild `transformSync`** — `npx esbuild ...` KURMA:
+  paket kurulum onayı ister + `--loader` stdin dışı hata verir. Doğru: `node -e "require('esbuild').transformSync(fs.readFileSync(F,'utf8'),{loader:'jsx'})"` (mevcut esbuild'i kullanır) VEYA grep ile
+  değişiklik teyidi + Vercel build. **(212) zsh `quote>` kazası:** pasted commit mesajında/yorumda kapanmamış
+  apostrof → `Ctrl+C`, tırnaksız tek satır tekrar (yorum satırı `#` koyma).
 - Tam tasarım sistemi/checklist için her zaman `CLAUDE-MOBILE.md`'yi de aç (bu belge ona referans verir).
 
 ---
