@@ -37,6 +37,22 @@
 > yapılıp mobile'a adapte edilecek). (4) **YENİ öncelik-1 iş: mobil layout standardizasyonu** (Sıra 11, §8) —
 > ekranlar ortak layout iskeleti paylaşmıyor: tab bar İş Başlat'ta var/Yönetici anasayfada yok, spool detayda
 > tab bar yok + alt ölü alan. Cihat: "Baştan doğru düzgün, yarım kalmasın."
+>
+> **GÜNCELLEME (oturum 213):** **Sıra 11 (mobil layout standardizasyonu) ANA GÖVDE TAMAMLANDI.**
+> (1) **`MLayout` (yeni ortak iskelet)** — 100dvh flex kolon; slot'lar: `topbar` · `geri`+`baslik` (standart
+> sol-üst geri, verilmezse gizli) · `icerikKaydir` (true=tek scroll / false=ekran kendi scroll'u) ·
+> `altBar`+`altBarAktif`+`kullanici`+`onMenuClick` · `onDrawerKapat`. Eski fixed topbar + m-page padding
+> hilesi terk edildi. (2) **`MBottomNav` baştan yazıldı** — yüzen (floating) pill, blur + color-mix
+> yarı-şeffaf, aktif accent kabartma; **4 sabit slot: Ana Sayfa · Devreler · Uygulamalar · Menü(avatar)**;
+> eski 5-slot + QR FAB KALDIRILDI (QR İş Başlat akışında). (3) **Kök ekranlar** (MAnasayfaYonetici, MIslemler,
+> MUygulamalar, MDevreler) → MLayout + yüzen alt bar. (4) **Detay ekranlar** → sol-üst geri, bar yok: MProfil,
+> İş Başlat rolSec, spool detay (IbSpoolDetay). **MDevreDetay** → nötr bar (aktif=null) + geri. (5) **Spool
+> detay ölü alan giderildi** — her iki mod (operatör+denetim) 100dvh tam ekran; sabit `calc(100dvh-56-80)`
+> kalktı. (6) **MIsBaslat** MLayout'a alındı; eski MTopBar/MBottomNav/drawer temizlendi. (7) **MQRTara**
+> bilinçli MLayout DIŞINDA (tam ekran kamera). **Kilitli kurallar:** alt bar sadece kök ekranlarda; geri
+> detaylarda sol-üst + gidecek yer yoksa gösterme (tek kaynak MLayout `geri`); bar 4 sabit slot şimdilik
+> (AI büyük butonu sonra); spool detayda bar YOK (footer aksiyonları). **Cihat notu:** fonksiyonel yeterli,
+> estetik beğenilmedi → **cila 214'e öncelikli.** HEAD f314465, api=12. Detay: CLAUDE-SONRAKI-OTURUM.md.
 
 ---
 
@@ -286,12 +302,38 @@ kalmadı (grep teyitli; kalan eşleşmeler yalnız yorum satırı). Commit `8b93
 | 9 | ✅ **İLK YARI CANLI (210)** Spool detay çatalı: `/spool/:id` → IbSpoolDetay `mod="denetim"` + Denetim sekmesi (n/N resmi `nNRenkler`, KK&sevk, belge, log); yönetici operatörle aynı ekran + "Yönetici" pill; Malzeme heat salt-okunur; MSpoolDetay emekli (route koptu, dosya duruyor → `_arsiv/` 211). | §6 |
 | 9b | ✅ **CANLI (211)** B köprüsü: Denetim footer `yetkili && "Bu Spool'da İşlem Yap"` → düz `/islemler` (**seed-spool İPTAL** — operatör işlem seçip QR okutur; MIsBaslat'a dokunulmadı). Wrapper'a `bloklar` prop'u. + auto-open timing fix + MSpoolDetay→`_arsiv/`. | §6 |
 | 10 | Kesim/Büküm/Markalama native React işlem ekranları (saha düzeni) | büyük, ayrı turlar |
-| 11 | 🔴 **ÖNCELİK-1 (212'de tanımlandı) — Mobil layout standardizasyonu.** Ekranlar ortak layout iskeleti paylaşmıyor: tab bar İş Başlat'ta VAR / Yönetici anasayfada YOK; spool detayda tab bar yok + alt **ölü boşluk** (içerik 100dvh flex iskeletine oturmamış). Çözüm: tek ortak `MLayout` (topbar + flex:1 scroll içerik + koşullu tab bar). R-10 mockup-first → tüm ekranları geçir. Cihat: "baştan doğru, yarım kalmasın." Detay: CLAUDE-SONRAKI-OTURUM.md §2. | R-10, CLAUDE-MOBILE §9 |
+| 11 | ✅ **ANA GÖVDE TAMAMLANDI (213) — Mobil layout standardizasyonu.** Tek ortak `MLayout` (topbar slot + `geri` slotu + `icerikKaydir` + `altBar`). Yüzen 4-slot alt bar (`MBottomNav` yeniden: Ana Sayfa·Devreler·Uygulamalar·Menü; QR FAB kaldırıldı). Kök ekranlar bara alındı (dashboard·işlemler·devreler·uygulamalar). Detay ekranlar sol-üst geri + bar yok (MProfil, İş Başlat rolSec, spool detay); MDevreDetay nötr bar+geri. Spool detay ölü alan giderildi (her iki mod 100dvh). MIsBaslat MLayout'a; eski MTopBar/MBottomNav akışı kaldırıldı. MQRTara bilinçli MLayout dışı. **Kalan (214): estetik cila + topbar birleştirme/çift avatar + MTopBar arşiv.** | R-10, CLAUDE-MOBILE §9 |
 
-**Sıra 1–6 + 9 + 9b tamamlandı (207–211).** **213 ana işi: Sıra 11 (layout standardizasyonu, öncelik-1).**
+**Sıra 1–6 + 9 + 9b + 11 (ana gövde) tamamlandı (207–213).** **214 ana işi: Sıra 11 estetik cila +
+topbar birleştirme (çift avatar temizliği).**
 Sonra: Sıra 8 (kayıt akışı, en büyük) · Sıra 7 (MMusteri, web-first ertelendi).
-Devreden debt: MDevreler ölü keyframe `mDvrFadeIn` temizliği · topbar animasyon iOS fix (§11) · üyelik paketi
-abonelik bağı (§11) · avatar canlı teyit (209).
+Devreden debt: açık-iş rozeti (operatör İş Başlat kartlarında +1, altyapı hazır) · eski `MTopBar.jsx` →
+`_arsiv/` · MDevreler ölü keyframe `mDvrFadeIn` temizliği · topbar animasyon iOS fix (§11) · üyelik paketi
+abonelik bağı (§11) · color-mix alt bar şeffaflığı cihaz teyidi.
+
+---
+
+## 8b. Sıra 11 — MLayout mimari referansı (213)
+
+Ekran tipine göre MLayout kullanım kalıbı (214+ yeni ekranlar için standart):
+
+| Ekran tipi | Kalıp | Alt bar | Geri | Örnek |
+|---|---|---|---|---|
+| **Kök** (gezinme hedefi) | `topbar` slot + `altBar altBarAktif="..." kullanici onMenuClick drawer` | ✅ | – | MAnasayfaYonetici, MIslemler, MUygulamalar |
+| **Kök + sabit çubuk** | yukarıdaki + `icerikKaydir={false}` (sabit arama/stat + kayan liste) | ✅ | – | MDevreler |
+| **Basit detay** | `geri={fn} baslik="..."` (bar yok) | – | ✅ | MProfil, İş Başlat rolSec |
+| **Detay + sabit sekme** | `geri` yerine ekran kendi topbar'ında geri + `altBar altBarAktif={null}` (nötr) + `icerikKaydir={false}` | ✅ nötr | ✅ | MDevreDetay (Kabuk sarmalayıcı) |
+| **Zengin header** | MLayout DIŞI; kendi 100dvh scroller + header içinde geri; bar yok | – | ✅ | IbSpoolDetay (ustBant geri) |
+| **Tam ekran** | MLayout YOK; kendi absolute layout | – | ✅ (kendi) | MQRTara (kamera) |
+
+**Kurallar:** (1) Alt bar sadece kök ekranlarda. (2) Geri detaylarda sol-üst, gidecek yer yoksa gösterme —
+tek kaynak `MLayout geri` slotu (istisna: IbSpoolDetay zengin header'ında taşır). (3) Bar 4 sabit slot;
+ortaya AI büyük butonu SONRA. (4) QR bara girmez (İş Başlat akışında). (5) Spool detayda bar YOK (footer
+aksiyonlarıyla çakışır — WhatsApp da sohbet içinde bar gizler). (6) `icerikKaydir=false` ekranları alt bar
+boşluğunu kendi listelerinin `paddingBottom`'unda verir.
+
+**214 açık:** estetik cila (geri/topbar/spool header) · topbar birleştirme + kök ekranlardaki ÇİFT AVATAR
+(topbar avatarı + bar Menü avatarı) temizliği · eski `MTopBar.jsx` → `_arsiv/`.
 
 ---
 
