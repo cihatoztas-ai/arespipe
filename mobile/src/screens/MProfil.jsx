@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { dosyaUrlAl } from '../lib/dosya'
 import { useT } from '../lib/i18n'
+import MLayout from '../components/MLayout'
 import MMarkLogo from '../components/MMarkLogo'
 
 export default function MProfil({ kullanici }) {
@@ -100,20 +101,21 @@ export default function MProfil({ kullanici }) {
     }
   }
 
-  return (
-    <div style={s.sayfa}>
-      {/* Topbar */}
-      <div style={s.topbar}>
-        <button style={s.geriBtn} onClick={() => navigate(-1)} aria-label={tv('m_geri', 'Geri')}>
-          <span style={{ fontSize: 24 }}>‹</span>
-        </button>
-        <MMarkLogo style={s.topbarLogo} />
-        <div style={s.topbarTitle}>{tv('m_profil_baslik', 'Profil')}</div>
-      </div>
+  const topbar = (
+    <div style={s.topbar}>
+      <button style={s.geriBtn} onClick={() => navigate(-1)} aria-label={tv('m_geri', 'Geri')}>
+        <span style={{ fontSize: 24 }}>‹</span>
+      </button>
+      <MMarkLogo style={s.topbarLogo} />
+      <div style={s.topbarTitle}>{tv('m_profil_baslik', 'Profil')}</div>
+    </div>
+  )
 
-      <div style={s.scroll}>
-        {/* Avatar */}
-        <div style={s.avatarWrap}>
+  return (
+    <>
+    <MLayout topbar={topbar}>
+      {/* Avatar */}
+      <div style={s.avatarWrap}>
           <div style={s.avatarKutu}>
             {avatarUrl ? (
               <img key={avatarBust} src={avatarUrl} alt="" style={s.avatarImg} />
@@ -197,10 +199,10 @@ export default function MProfil({ kullanici }) {
         </div>
 
         <div style={{ height: 'calc(24px + env(safe-area-inset-bottom))' }} />
-      </div>
+    </MLayout>
 
-      {toast && <div style={s.toast}>{toast}</div>}
-    </div>
+    {toast && <div style={s.toast}>{toast}</div>}
+    </>
   )
 }
 
