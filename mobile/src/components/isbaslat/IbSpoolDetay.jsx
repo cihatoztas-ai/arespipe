@@ -1052,10 +1052,20 @@ export default function IbSpoolDetay({
   ].filter(Boolean).join('-') || '—'
 
   return (
-    <div style={denetimMod ? { ...s.kapsayici, height: '100dvh' } : s.kapsayici}>
+    <div style={{ ...s.kapsayici, height: '100dvh' }}>
 
       {/* ───── Üst bant ───── */}
       <div style={isDevamEdiyor ? s.ustBantDevam : s.ustBant}>
+        <button
+          type="button"
+          style={s.geriBtn}
+          onClick={onGeri || (() => navigate(-1))}
+          aria-label={tv('m_geri', 'Geri')}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
         {isDevamEdiyor && <span style={s.pulseNokta} aria-hidden="true" />}
         <span style={s.ustBantYazi}>{ustBant}</span>
       </div>
@@ -1960,6 +1970,16 @@ const s = {
     padding: '14px 16px',
     background: '#fef3c7',
     borderBottom: '1px solid #fcd34d',
+  },
+  geriBtn: {
+    width: 36, height: 36, borderRadius: 9,
+    background: 'transparent',
+    border: 'none',
+    color: 'var(--tx)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    cursor: 'pointer', flexShrink: 0, padding: 0,
+    WebkitTapHighlightColor: 'transparent',
+    marginLeft: -6,
   },
   ustBantYazi: {
     fontSize: 17,

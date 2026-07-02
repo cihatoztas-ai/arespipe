@@ -23,9 +23,7 @@
 
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import MTopBar      from '../components/MTopBar'
-import MBottomNav   from '../components/MBottomNav'
-import MDrawer      from '../components/MDrawer'
+import MLayout      from '../components/MLayout'
 import IbRolSec     from '../components/isbaslat/IbRolSec'
 import IbQRTara     from '../components/isbaslat/IbQRTara'
 import IbSpoolDetay from '../components/isbaslat/IbSpoolDetay'
@@ -46,7 +44,6 @@ export default function MIsBaslat() {
   // ───────────────────────────────────────────────
   // State
   // ───────────────────────────────────────────────
-  const [drawerAcik,   setDrawerAcik]   = useState(false)
   const [aktifEkran,   setAktifEkran]   = useState('rolSec')
   const [kullanici,    setKullanici]    = useState(null)
   const [bloklar,      setBloklar]      = useState([])
@@ -137,14 +134,6 @@ export default function MIsBaslat() {
     setAktifEkran('qr')
   }
 
-  const qraGec = () => {
-    if (!seciliRol) {
-      alert(tv('m_ib_rol_sec_uyari', 'Önce yukarıdan rolünüzü seçin'))
-      return
-    }
-    setAktifEkran('qr')
-  }
-
   // ───────────────────────────────────────────────
   // IbQRTara callback'leri
   // ───────────────────────────────────────────────
@@ -171,7 +160,7 @@ export default function MIsBaslat() {
   }
 
   // ───────────────────────────────────────────────
-  // QR ekranı tam ekran kamera — MTopBar/MBottomNav gizlenir
+  // QR ekranı tam ekran kamera — chrome yok (IbQRTara kendi tam ekranı)
   // ───────────────────────────────────────────────
   if (aktifEkran === 'qr') {
     return (
@@ -184,80 +173,60 @@ export default function MIsBaslat() {
   }
 
   // ───────────────────────────────────────────────
-  // Standart layout: TopBar + content + BottomNav
+  // Spool detay — TAM EKRAN (kendi geri + 100dvh, bar yok).
+  // IbSpoolDetay self-contained: üstte kendi geri tuşu (onGeri → rolSec),
+  // altta aksiyon footer'ı. Alt bar KOYULMAZ (footer ile çakışırdı).
+  // ───────────────────────────────────────────────
+  if (aktifEkran === 'spoolDetay') {
+    return (
+      <IbSpoolDetay
+        spool={guncelSpool}
+        aktifRol={seciliRol}
+        kullanici={kullanici}
+        bloklar={bloklar}
+        onBaskaSpool={handleBaskaSpool}
+        onGeri={() => setAktifEkran('rolSec')}
+      />
+    )
+  }
+
+  // ───────────────────────────────────────────────
+  // Rol Seç (Ekran 1) — MLayout + standart geri (bar YOK; detay/aksiyon ekranı)
   // ───────────────────────────────────────────────
   return (
-    <>
-      <MTopBar
-        title={tv('m_ib_baslik', 'İş Başlat')}
-        kullanici={kullanici}
-        onAvatarClick={() => setDrawerAcik(true)}
-      />
+    <MLayout
+      geri={() => navigate(-1)}
+      baslik={tv('m_ib_baslik', 'İş Başlat')}
+    >
+      {yukleniyor && (
+        <div style={{
+          padding: '32px 24px',
+          textAlign: 'center',
+          color: 'var(--txd)',
+          fontSize: 14,
+        }}>
+          {tv('m_yukleniyor', 'Yükleniyor...')}
+        </div>
+      )}
 
-      <main
-        className="m-page"
-        style={{
-          paddingTop: 56,
-          paddingBottom: 80,
-          minHeight: '100dvh',
-          background: 'var(--bg)',
-        }}
-      >
-        {yukleniyor && (
-          <div style={{
-            padding: '32px 24px',
-            textAlign: 'center',
-            color: 'var(--txd)',
-            fontSize: 14,
-          }}>
-            {tv('m_yukleniyor', 'Yükleniyor...')}
-          </div>
-        )}
+      {!yukleniyor && hata && (
+        <div style={{
+          padding: '24px',
+          textAlign: 'center',
+          color: 'var(--re)',
+          fontSize: 14,
+        }}>
+          {hata}
+        </div>
+      )}
 
-        {!yukleniyor && hata && (
-          <div style={{
-            padding: '24px',
-            textAlign: 'center',
-            color: 'var(--re)',
-            fontSize: 14,
-          }}>
-            {hata}
-          </div>
-        )}
-
-        {/* ── Ekran 1: Rol Seç ── */}
-        {!yukleniyor && !hata && aktifEkran === 'rolSec' && (
-          <IbRolSec
-            bloklar={bloklar}
-            seciliRolId={seciliRol?.id}
-            onRolSec={rolSec}
-          />
-        )}
-
-        {/* ── Ekran 3: Spool Detay ── */}
-        {!yukleniyor && !hata && aktifEkran === 'spoolDetay' && (
-          <IbSpoolDetay
-            spool={guncelSpool}
-            aktifRol={seciliRol}
-            kullanici={kullanici}
-            bloklar={bloklar}
-            onBaskaSpool={handleBaskaSpool}
-            onGeri={() => setAktifEkran('rolSec')}
-          />
-        )}
-      </main>
-
-      <MBottomNav
-        aktif="anasayfa"
-        qrAktif={!!seciliRol}
-        onQrClick={qraGec}
-        onMenuClick={() => setDrawerAcik(true)}
-      />
-
-      <MDrawer
-        acik={drawerAcik}
-        kapat={() => setDrawerAcik(false)}
-      />
-    </>
+      {!yukleniyor && !hata && (
+        <IbRolSec
+          bloklar={bloklar}
+          seciliRolId={seciliRol?.id}
+          onRolSec={rolSec}
+        />
+      )}
+    </MLayout>
   )
 }
