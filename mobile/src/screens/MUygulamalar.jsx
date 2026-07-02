@@ -8,12 +8,15 @@
 //
 // Kalıp: MIslemler.jsx (topbar + hero + GrupButonu + MDrawer + s/b stil ikilisi).
 // durum='yakinda' uygulamalar tıklanınca toast, durum='aktif' → navigate(hedef).
+//
+// 213/Sıra 11: Ortak iskelet MLayout'a taşındı (s.sayfa + s.scroll kalktı).
+//   Topbar slot olarak MLayout'a geçirilir; MDrawer'ı MLayout mount eder.
 
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useT } from '../lib/i18n'
 import { UYGULAMALAR } from '../lib/uygulamalar'
-import MDrawer from '../components/MDrawer'
+import MLayout from '../components/MLayout'
 import MMarkLogo from '../components/MMarkLogo'
 
 export default function MUygulamalar({ kullanici = null, anaSayfaModu = false }) {
@@ -37,33 +40,37 @@ export default function MUygulamalar({ kullanici = null, anaSayfaModu = false })
     uygulamaTikla._t = window.setTimeout(() => setToast(''), 1800)
   }
 
-  return (
-    <div style={s.sayfa}>
-      {/* Topbar */}
-      <div style={s.topbar}>
-        {!anaSayfaModu && (
-          <button
-            style={s.topbarBtn}
-            onClick={() => navigate(-1)}
-            aria-label={tv('m_geri', 'Geri')}
-          >
-            ‹
-          </button>
-        )}
-        <MMarkLogo style={s.topbarLogo} />
-        <div style={s.topbarTitle}>{tv('m_app_title', 'AresPipe')}</div>
+  // ── Topbar (slot) ──
+  const topbar = (
+    <div style={s.topbar}>
+      {!anaSayfaModu && (
         <button
-          style={s.profilBtn}
-          onClick={() => setDrawerAcik(true)}
-          aria-label={tv('m_drawer_profil', 'Profil')}
+          style={s.topbarBtn}
+          onClick={() => navigate(-1)}
+          aria-label={tv('m_geri', 'Geri')}
         >
-          {(kullanici?.ad_soyad || kullanici?.email || '?').charAt(0).toUpperCase()}
+          ‹
         </button>
-      </div>
+      )}
+      <MMarkLogo style={s.topbarLogo} />
+      <div style={s.topbarTitle}>{tv('m_app_title', 'AresPipe')}</div>
+      <button
+        style={s.profilBtn}
+        onClick={() => setDrawerAcik(true)}
+        aria-label={tv('m_drawer_profil', 'Profil')}
+      >
+        {(kullanici?.ad_soyad || kullanici?.email || '?').charAt(0).toUpperCase()}
+      </button>
+    </div>
+  )
 
-      {/* Scroll alan */}
-      <div style={s.scroll}>
-
+  return (
+    <>
+      <MLayout
+        topbar={topbar}
+        drawerAcik={drawerAcik}
+        onDrawerKapat={() => setDrawerAcik(false)}
+      >
         {anaSayfaModu ? (
           /* Ana sayfa modu — hero + uygulamalarınız başlığı */
           <>
@@ -102,12 +109,10 @@ export default function MUygulamalar({ kullanici = null, anaSayfaModu = false })
 
         {/* Alt boşluk safe-area */}
         <div style={{ height: 'calc(24px + env(safe-area-inset-bottom))' }} />
-      </div>
+      </MLayout>
 
       {toast && <div style={s.toast}>{toast}</div>}
-
-      <MDrawer acik={drawerAcik} kapat={() => setDrawerAcik(false)} />
-    </div>
+    </>
   )
 }
 
@@ -139,16 +144,9 @@ function UygulamaButonu({ ikon, renk, baslik, altbaslik, yakinda, yakindaMetin, 
   )
 }
 
-/* ─── Stiller (MIslemler s/b ikilisinden) ─── */
+/* ─── Stiller (MIslemler s/b ikilisinden — s.sayfa/s.scroll MLayout'a taşındı) ─── */
 
 const s = {
-  sayfa: {
-    height: '100dvh',
-    display: 'flex',
-    flexDirection: 'column',
-    background: 'var(--bg)',
-    color: 'var(--tx)',
-  },
   topbar: {
     flexShrink: 0,
     display: 'flex',
@@ -193,11 +191,6 @@ const s = {
     cursor: 'pointer',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     flexShrink: 0,
-  },
-  scroll: {
-    flex: 1,
-    overflowY: 'auto',
-    WebkitOverflowScrolling: 'touch',
   },
   hero: {
     background: 'var(--sur)',
