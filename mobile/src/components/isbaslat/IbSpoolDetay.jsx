@@ -1052,7 +1052,7 @@ export default function IbSpoolDetay({
   ].filter(Boolean).join('-') || '—'
 
   return (
-    <div style={s.kapsayici}>
+    <div style={denetimMod ? { ...s.kapsayici, height: '100dvh' } : s.kapsayici}>
 
       {/* ───── Üst bant ───── */}
       <div style={isDevamEdiyor ? s.ustBantDevam : s.ustBant}>
