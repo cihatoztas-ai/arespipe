@@ -1,73 +1,79 @@
-# CLAUDE — Oturum 213 Log
+# CLAUDE — Oturum 214 Log
 
 ## Özet
-Sıra 11 (mobil layout standardizasyonu) ana gövdesi tamamlandı. Dağınık, her ekranın
-kendi kopyaladığı iskelet tek `MLayout`'a toplandı; yüzen WhatsApp-dili 4-slot alt bar
-baştan yazılıp kök ekranlara yayıldı; spool detaydaki ölü gri alan giderildi; detay
-ekranlarına "gidecek yer varsa göster" kuralıyla standart geri tuşu getirildi. Oturum
-uzun ve çok push'lu ilerledi; her adım ayrı deploy + canlı test ile doğrulandı. Cihat
-tasarım kararlarını yönlendirdi (bar'dan QR/İş Başlat çıkarma, evrensel bar, avatar
-Menü, spool detayda bar yok). Kapanışta estetik cila sonraki oturuma bırakıldı.
+Planlanan estetik cila işine hiç girilmedi; araya ACİL bir iş girdi ve tüm oturum ona
+gitti: Cihat süper admin'den gerçek bir firma (ARESMAK) açmak istedi. `admin/yeni-firma.html`
+wizard'ı incelendi — çalışıyordu ama alanların anlamı belirsizdi (Hesap Tipi/Plan ne yapıyor,
+demo bitiş neden zorunlu görünüyor). Wizard'ın gerçek firma için "boş basamaklı tenant"
+riski konuşuldu. Cihat "demo atölyeyi klonlayalım" dedi — daha doğru bir içgüdü. Config
+tabloları cerrahi (beyaz-liste) klonlanarak ARESMAK tenant'ı kuruldu, 2 kullanıcı manuel
+Auth + kullanicilar insert ile tanımlandı, giriş canlı doğrulandı. Sonra Cihat "projeler
+sayfası sahte veri gösteriyor, gerçeğe bağlayalım" dedi; sayfa incelendi (tamamen hardcoded,
+DB bağı sıfır), gerçek-veri bağlama patch'i yazıldı/doğrulandı/teslim edildi.
 
-## Akış (özet)
-1. **Ritüel** — HEAD 097d8a8 (212 kapanış), tree temiz, api=12. 3 görselle 212'de
-   tespit edilen tutarsızlık teyit edildi: İş Başlat bar VAR, dashboard YOK, spool
-   detay bar YOK + ölü alan.
-2. **MLayout kuruldu** + en basit ekran MUygulamalar ile kanıtlandı (topbar slot +
-   flex:1 scroll + minHeight:0). Kanıt canlıda temiz.
-3. **MAnasayfaYonetici** MLayout'a (görünmez iskelet değişimi; Cihat "ne değişti?"
-   diye sordu → doğru cevap: dashboard zaten sorunsuzdu, iskelet birleşti = regresyon
-   yok). Bu noktada plan görünür işe çevrildi.
-4. **Spool detay ölü alan fix** (denetim modu): `s.kapsayici` yüksekliği moda bağlandı
-   → denetim 100dvh. Python anchor patch (container'da test, idempotency, esbuild).
-   İLK GÖRÜNÜR KAZANÇ — Cihat "oldu galiba" dedi.
-5. **Yüzen bar tasarımı** — mockup (dark+light, operatör/yönetici). Cihat kararları:
-   QR FAB kalksın (İş Başlat akışında zaten var), İş Başlat da bardan çıksın (role
-   özel), evrensel bar olsun, avatar=Menü. Sonuç: 4 slot (Ana Sayfa·Devreler·
-   Uygulamalar·Menü).
-6. **MBottomNav baştan yazıldı** (yüzen, blur, color-mix) + MLayout altBar + kök
-   ekranlara yayıldı (dashboard, işlemler, uygulamalar, devreler).
-7. **Geri tuşu kuralı** netleşti (Cihat): "her yerde aynı yerde, gidecek yer yoksa
-   gösterme." MLayout'a `geri` slotu eklendi (tek kaynak).
-8. **Detay ekranlar:** MDevreDetay (nötr bar + geri), MProfil (geri, bar yok).
-9. **Son koordineli parça:** IbSpoolDetay (her iki mod tam ekran + ustBant geri, bar
-   yok) + MIsBaslat (MLayout, eski MTopBar/MBottomNav/drawer temizlendi). Push f314465.
-10. **Kapanış** — Cihat estetiği beğenmedi ama fonksiyonel yeterli buldu; push edip
-    kapatma kararı. Handoff dörtlüsü hazırlandı.
+## Akış
+1. **Ritüel** — HEAD b1f2b63 (213 kapanış [skip ci]), tree temiz, api=12. Cila park edildi
+   (kaybolmadı).
+2. **yeni-firma.html teşhisi** — form bozuk değil, 4 adımda gerçek iş yapıyor (tenant+modul+
+   feature+davet). Cihat'ın karışıklığı: select'ler tema yüzünden gri görünüyor (disabled
+   değil); demo_bitis validate'te ZORUNLU değil (init +30g otomatik dolduruyor); Hesap Tipi/
+   Plan bu formda sadece tenants'a etiket, yetkiyi Adım2/3 (modul/feature) belirliyor.
+3. **Klon kararı** — wizard yerine Demo Atölye klonu. Şema keşfi: 67 tenant-scoped tablo →
+   config vs veri ayrımı. FK haritası: config tabloları yalnız tenants(id)'ye bağlı (aralarında
+   bağ yok). rol_sablonlari.yetki_kodu düz metin (gizli ref yok). yetki_bloklari demo'da 0.
+   Sayaç değerleri dolu (spool son_no=2224 vb.) → klonda SIFIRLA tuzağı yakalandı.
+4. **Klon uygulandı** — dry-run (BEGIN/ROLLBACK, sayı 1·6·5·10·69·7) → kalıcı (otokomit) →
+   doğrulama aynı. ARESMAK tenant `9f6fe657...`, kod A, production.
+5. **Kullanıcılar** — Auth panel (Add user, Auto Confirm) + kullanicilar insert (on conflict
+   do update). Cihat=firma_admin (giriş doğrulandı), Kıvanç=yonetici (şifre SQL ile atandı,
+   crypt/gen_salt, pgcrypto). Davet butonu 401 verdi → panel yolu kullanıldı.
+6. **giriş testi** — Cihat ARESMAK admin olarak girdi, tam panel açıldı. Kurulum çalışıyor.
+7. **Davet/etiket teşhisleri** — "davet bekliyor" etiketi + davet 401. Sorgu: iki kullanıcı
+   da auth'ta giriş yapmış (last_sign_in_at dolu) ama kullanicilar.son_giris NULL → etiket
+   son_giris'e bakıyor, login onu yazmıyor. Davet 401 = anon anahtar admin API'ye giremez.
+8. **proje_liste.html** — tamamen hardcoded (~850 satır <tr>), DB bağı yok, kolonlar tabloyla
+   örtüşmüyor. Şema alındı (projeler/devreler/spooller). Gerçek-veri patch'i yazıldı, node
+   --check + bütünlük + idempotency doğrulandı, MD5 ile teslim. Ekleme/düzenleme bilinçli
+   dışarıda (tersane formu bozuk).
+9. **Kapanış** — handoff dörtlüsü. Kod push'u olmadı (patch Cihat'ta push edilecek).
 
 ## Kararlar / öğrenmeler
-- **MLayout = tek kaynak.** Ekranı MLayout'a bağlamak ekran-başına tek seferlik
-  "kablolama" işi (eski ekranlar MLayout yokken yazıldığı için her biri kendi iskeletini
-  kopyalamış). Kablolama bitince bar/topbar/geri tek dosyadan yönetiliyor — Cihat'ın
-  "tek yerden değiştir, hepsi güncellensin" beklentisi tam bu.
-- **İyi ürün gidip gelerek çıkıyor.** Cihat "her yerde bar/geri olsun" diye itti, Claude
-  "şurada çakışır / ölü sekme olur" diye frenledi; ortada doğru şey kaldı (bar kök
-  ekranlarda, geri detaylarda, spool detayda ikisi de yok çünkü footer dolu).
-- **Ölü alan = yükseklik matematiği**, footer eksikliği değil. `calc(100dvh-56-80)`
-  operatör chrome'una göre sabitlenmişti; denetimde/tam-ekranda yanlıştı. Flex/100dvh
-  çözdü.
-- **QR bara girmez** — akış içinde zaten var (kart→QR + MIslemler QR butonu). Bardan
-  çıkarmak QR erişimini bozmadı (kod teyitli).
-- **color-mix şeffaflık** iOS 16.2+; modern cihazda çalışır, degrade riski kabul edildi.
-- **MDevreler/MDevreDetay `icerikKaydir=false`** — sabit çubuk + kayan liste modeli
-  MLayout'un tek-scroll modeline sığmaz; MLayout'a bu seçenek eklendi.
-- **IbSpoolDetay zengin header istisnası** — geri MLayout slot'u yerine ustBant içinde
-  (iki header üst üste binmesin). Aynı görünüm, farklı yer. Estetik cilada gözden
-  geçirilecek.
+- **Klon > wizard (bu senaryoda).** Çalışan bir tenant'ın config'ini klonlamak, wizard'ın
+  boş-basamak riskinden iyi. Ama "klonla" tek buton değil: config vs test-veri ayrımı +
+  sayaç sıfırlama + FK/gizli-ref kontrolü şart. Bu üçü doğrulanınca klon güvenli.
+- **Config tabloları izole** (yalnız tenants'a bağlı) → id remap zinciri gerekmedi; sadece
+  tenant_id çevir + yeni id (default). Bu, klonu basit ve güvenli yaptı.
+- **Sayaç tuzağı:** klonda son_no taşınırsa yeni firma demo'nun numarasından devam eder
+  (spool 2225'ten). son_no=0 zorunlu; prefix/digits yapısı korunur.
+- **Auth != kullanicilar.** Auth kullanıcı (giriş) ve kullanicilar satırı (uygulama kimliği/
+  tenant/rol) AYRI. Kullanıcı kurmak = ikisi birden. Panelde Auth + SQL ile kullanicilar.
+- **Davet akışı tarayıcıdan çalışmaz** (inviteUserByEmail = service_role). İki sayfada 401.
+  Kalıcı çözüm Sıra 8. Şimdilik panel+SQL yolu tek geçerli kullanıcı ekleme yöntemi.
+- **son_giris ayrı alan** — Supabase last_sign_in_at ≠ kullanicilar.son_giris. Login akışı
+  son_giris'i güncellemiyor; bu hem "davet bekliyor" etiketini hem MK-207.2 dormant tespitini
+  bozuyor. Login'de kullanicilar.son_giris=now() yazılmalı.
+- **proje_liste bağlama deseni:** hardcoded satırları KALDIR + aynı 12-hücre yapıda dinamik
+  üret → mevcut DOM makinesi (filtre/sıralama/export/boş durum) HİÇ değişmeden çalışır.
+  Yeniden yazma değil, veri kaynağı değişimi. Düşük risk.
+- **UI kolonu ≠ tablo kolonu.** Hardcoded UI, projeler'de olmayan alanları (Başlangıç, Durum)
+  uydurmuştu. Gerçeğe bağlarken: Başlangıç=olusturma, Durum=ilerlemeden türet, Tersane=
+  ana_yuklenici (tersane_id bozuk), toplamlar=devreler/spooller agregasyonu.
 
-## Teslim edilenler (deploy'lu)
-- MLayout (yeni), MBottomNav (yeniden), + MUygulamalar, MAnasayfaYonetici, MIslemler,
-  MDevreler, MDevreDetay, MProfil, IbSpoolDetay, MIsBaslat (MLayout geçişleri).
-- Spool detay ölü alan fix (anchor patch, ayrı commit f33ab35).
-- MQRTara: dokunulmadı (bilinçli).
+## Teslim edilenler
+- ARESMAK tenant + config klonu + 2 kullanıcı (CANLI, DB'de kalıcı).
+- proje_liste.html gerçek-veri patch'i (MD5 d484e9e0345ca66fe1ab866a5944be1c) — Cihat'ta
+  kopyalanıp PUSH edilecek. Yedek: proje_liste.html.bak.
 - Yeni endpoint yok; api/*.js=12.
 
 ## Disiplin uygulananlar
-- MK-126.8 (yazmadan önce dosya okundu — MDevreler/MDevreDetay/IbSpoolDetay/MIsBaslat
-  tam kod alınıp container'da düzenlendi, tahminle dokunulmadı).
-- Her dosya container'da esbuild `transformSync` (JSX) ile doğrulandı; MD5 ile teslim.
-- Python anchor patch (spool ölü alan): .bak + ABORT-on-mismatch + MARKER idempotency +
-  esbuild doğrulama, container'da test edildi.
-- Kod commit [skip ci] YOK; kapanış doc [skip ci] VAR. Push öncesi pull --rebase.
-- R-10 (mockup-first) yüzen bar için uygulandı; iskelet geçişleri için "navigasyon
-  sözleşmesi" mockup yerine geçti (yeni ekran değil, iskelet birleştirme).
+- MK-158.1 (DATA→UI→kod): her adımda önce information_schema/SELECT ile veri görüldü,
+  sonra dosya okundu, sonra yazıldı. Silme/klon öncesi proje sayıları teyit edildi.
+- MK-85.3 (kolon teyidi): tenants/kullanicilar/projeler/devreler/spooller/config kolonları
+  information_schema ile alındı; körlemesine kolon adı yazılmadı.
+- MK-200.5 (BEGIN/ROLLBACK dry-run → doğrula → COMMIT): klon dry-run'la test edildi, sayılar
+  eşleşti, sonra kalıcı yapıldı, tekrar doğrulandı.
+- MK-126.8 (yazmadan önce oku): proje_liste tam JS okundu (init/silRow/projeyeGit/filtre/
+  export) — makineyi kırmamak için.
+- Patch: Python anchor + .bak + ABORT-on-mismatch + MARKER idempotency + node --check +
+  bütünlük (grep </html>=1) + MD5. Container'da test edildi, idempotency doğrulandı.
+- Kod push'u [skip ci]'siz olacak; kapanış doc'ları [skip ci] VAR. Push öncesi pull --rebase.

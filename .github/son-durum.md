@@ -1,41 +1,81 @@
-# AresPipe — Son Durum (Oturum 208 kapanışı)
+# AresPipe — Son Durum (Oturum 214 kapanışı)
 
-## Bu oturum: 4 DALLI ROUTER + MARKA ENTEGRASYONU
-Sıra 3 (MAnasayfa 4 dallı router) canlıya çıktı. Ardından logo/marka mobile'a entegre edildi
-(PWA ikonları, manifest, giriş + topbar logoları). İş modeli MK-208.1 olarak kilitlendi.
+## Bu oturum: ACİL — Gerçek firma (ARESMAK) provizyonu + proje liste gerçek-veri bağlama
+Estetik cila (214'ün planı) araya giren acil işle ertelendi — HÂLÂ ÖNCELİK, başlanmadı.
+Bunun yerine: süper admin'den gerçek firma açma denendi, wizard yarım/belirsiz çıktı;
+onun yerine Demo Atölye config'i cerrahi klonlanarak ARESMAK tenant'ı kuruldu, 2 kullanıcı
+tanımlandı, proje liste sayfası sahte hardcoded veriden temizlenip gerçek DB'ye bağlandı.
 
-## Yapılanlar (canlı, 7 push)
-- **Router (972d47c):** MAnasayfa 4 dallı — yoneticiMi → dashboard, musteriMi → MMusteri placeholder,
-  gruplar.length>0 → MIslemler, else → MUygulamalar anaSayfaModu. `yetki.js`'e `musteriMi` (rol-temelli,
-  yoneticiMi kalıbı). DATA teşhisi: customers↔kullanicilar bağı DB'de YOK → musteriMi rol-temelli,
-  bugün hiç tetiklenmez (canlıda rol='musteri' yok), §7-3'e park. `m_musteri_yakinda` dil anahtarı (3 dil).
-- **PWA ikon+manifest (9a62f40):** `mobile/public`'e icon-180/192/512/1024 + favicon. manifest.webmanifest
-  oluşturuldu (standalone, AresPipe). index.html head: apple-touch-icon, manifest, theme-color, title=AresPipe, lang=tr.
-- **Ekran içi logo (a60410d):** topbar "AP" text → mark SVG (4 ekran). MGiris büyük "AP" → yatay logo.
-- **Giriş animasyonu (23da069):** MGiris inline SVG (tema-değişkenli var(--tx/--ac/--bg)) + tarama
-  animasyonu (web kalıbı: useRef + beginElement, açılışta bir kez). ÇALIŞIYOR.
-- **Topbar mark animasyonu (2263a7e → 1a129b8):** ortak MMarkLogo component (MK-109.1), mark-anim-bk.svg.
-  ⚠️ iOS Safari'de tarama çizgisi GÖRÜNMÜYOR/takılıyor — SMIL beginElement + CSS keyframes denendi, ikisi de
-  iOS'ta tutmadı. KOD DURUYOR (mark statik görünüyor, animasyon oynamıyor) — 209 debt.
+## Yapılanlar
 
-## Kesinleşen karar
-- **MK-208.1** — Üç erişim katmanı (ücretli kurumsal SaaS teklif-usulü off-app / ücretsiz müşteri izleme /
-  halka açık uygulama mobil-kayıt). Platform-bağımsız kimlik. Market engelleri = Safari PWA dağıtımında PARK.
-  KARARLAR.md + (MOBIL-STRATEJI'ye işlenecek — 209).
+### 1. ARESMAK tenant provizyonu (DB, SQL Editor — canlı)
+- **Yeni tenant:** `9f6fe657-d339-4904-b659-17db422fc085`, kod **A**, ad "ARESMAK MAKİNA
+  MÜH. İNŞ. SAN. TİC. LTD. ŞTİ.", firma_tipi=imalat, hesap_tipi=production, plan=pro,
+  demo_bitis=NULL, aktif=true.
+- **Config klonu — kaynak Demo Atölye** (`00000000-0000-0000-0000-000000000001`):
+  basamak_tanimlari(6), firma_moduller(5), tenant_features(10), rol_sablonlari(69),
+  sayac_tanimlari(7 — **son_no=0 sıfırlandı**, spool prefix/digits yapısı korundu).
+  **Test verisi (spool/devre/proje) TAŞINMADI** — temiz gerçek firma.
+- Klon güvenli çıktı çünkü: config tabloları **yalnızca tenants(id)**'ye bağlı (aralarında
+  FK yok → id remap zinciri gerekmedi); rol_sablonlari.yetki_kodu **düz metin** (basamak
+  UUID değil → gizli referans yok); yetki_bloklari demo'da zaten 0.
+- Dry-run (BEGIN/ROLLBACK) → sayılar 1·6·5·10·69·7 → kalıcı apply (BEGIN/COMMIT'siz,
+  otokomit) → doğrulama aynı. MK-200.5 uygulandı.
 
-## Açık debt (209)
-- **Topbar mark animasyonu:** web `beginElement()` ile tetikliyor; mobilde iOS Safari uyumlu hale getir.
-  Web giris.html satır 230 (inline SVG) + 383 (tara() fonksiyonu) referans. Kod hazır (MMarkLogo + mark-anim-bk.svg),
-  iOS tetikleme çözülmedi. Statiğe DÖNÜLMEDİ — web statik kullanmıyor, animasyon hedefi korunuyor.
-- MK-208.1 MOBIL-STRATEJI'ye işlenmedi (sadece KARARLAR'da).
+### 2. Kullanıcılar (2 kişi — Auth panel + kullanicilar insert)
+- Auth kullanıcıları Supabase Dashboard > Authentication > Add user (Auto Confirm) ile
+  MANUEL oluşturuldu (davet akışı DEĞİL — bilinçli, aşağıdaki 401 bug'ı yüzünden).
+- **Cihat ÖZTAŞ** — cihatoztas@aresmak.com.tr — rol=firma_admin — id
+  `f692c3b5-da0e-4387-b683-f26cd3fd38ab` — giriş DOĞRULANDI (canlı login başarılı).
+- **Kıvanç ŞENTÜRK** — kivancsenturk@aresmak.com.tr — rol=yonetici — id
+  `63cec050-3d60-44bf-9945-570d05bbc87c`. Şifresi panelden atanmadı, SQL ile atandı:
+  `update auth.users set encrypted_password=crypt('123456',gen_salt('bf')),
+  email_confirmed_at=coalesce(...) where id=...`. Geçici şifre 123456 — DEĞİŞTİRİLMELİ.
+- kullanicilar insert deseni: `on conflict (id) do update` (trigger çakışmasına karşı).
+  ad_soyad NOT NULL, tenant_id=ARESMAK, aktif=true.
+- yetki_bloklari boş olduğundan blok ataması gerekmedi; firma_admin rol şablonları
+  klonlandığı için admin ilk girişte tam panelle açıldı (doğrulandı).
+
+### 3. proje_liste.html — sahte veriden gerçek DB'ye (KOD, push bekliyor)
+- Teşhis: sayfanın DB bağı SIFIRDI; ~850 satır **hardcoded <tr>** (SEDEF/GEMAK/DESAN…),
+  filtre/sıralama/sayfalama/export hepsi DOM üzerinde. Ekran kolonları tabloyla
+  örtüşmüyordu (Başlangıç/Durum kolonu projeler'de YOK).
+- Patch (Python anchor, .bak + ABORT + MARKER idempotency + node --check):
+  - Hardcoded tbody boşaltıldı.
+  - `projeleriYukle()`: oturum→tenant çöz → projeler (tenant filtreli) → devreler/spooller'dan
+    agregat (devre sayısı, spool sayısı, ağırlık=Σdevreler.agirlik, ilerleme=avg devreler.ilerleme)
+    → satırları BİREBİR AYNI 12-hücre yapıda üret → downstream makine (plFiltrele/fix*) çalışır.
+  - Durum türetildi (0/yok=Başlamadı, 100=Tamamlandı, arası=Devam); projeler'de durum kolonu yok.
+  - Başlangıç=olusturma, Bitiş=teslim_tarihi, Tersane=ana_yuklenici (tersane_id DEĞİL — o bozuk).
+  - `silRow` → gerçek DB delete (data-proje-id). `projeyeGit` → gerçek proje id localStorage'a.
+  - Boş durum (#plBos) zaten vardı, artık gerçek (ARESMAK 0 proje → "bulunamadı").
+- **MD5: d484e9e0345ca66fe1ab866a5944be1c** — kopyala + gpc + Vercel + ARESMAK'ta test.
+
+## Açık debt (215+)
+- **[ÖNCELİK — devralındı] Estetik cila:** geri tuşu + geri-başlık topbar + IbSpoolDetay
+  ustBant. 213'ten beri bekliyor.
+- **proje ekleme/düzenleme DB yazımı:** proje_liste'de bilinçli DIŞARIDA bırakıldı (ghost
+  satır riski). Ekleme formunun tersane/firma seçicisi BOZUK ("tersane kaydedemedim").
+  → tersane kaydı bug'ı + proje ekle/düzenle persist birlikte ele alınacak.
+- **Davet 401 (İKİ yerde):** admin/yeni-firma.html Adım4 + admin/firma-detay.html "Kullanıcı
+  Davet Et" — `auth.admin.inviteUserByEmail` tarayıcıdan (anon anahtar) 401. Kök çözüm =
+  **Sıra 8 (kayıt/davet akışı)**, "en büyük kalan iş". Bu iki 401 onun somut kanıtı.
+- **kullanicilar.son_giris HİÇ güncellenmiyor:** auth.users.last_sign_in_at doluyor ama
+  kullanicilar.son_giris NULL kalıyor → firma-detay "davet bekliyor" etiketi bundan
+  yanılıyor + MK-207.2 dormant tespiti çalışmıyor. Login akışı son_giris yazmalı.
+- **Yeni tenant açma reçetesi:** yeniden lazım olacak → script hazır (bu oturum). Not:
+  config beyaz-liste klonu + sayaç sıfırlama + auth panel + kullanicilar insert.
+- Geçici şifreler (Cihat/Kıvanç) production'da değiştirilmeli.
+- Yeni i18n anahtarı `pl_delete_fail` lang/{tr,en,ar}.json'a eklenmeli (fallback çalışıyor).
+- ARESMAK henüz iş akışı yetki_bloklari yok — Cihat iş akışını tanımlayınca oluşacak.
 
 ## CI / push
-- HEAD: 1a129b8 (+ varsa bot ci commit'leri). api/*.js = 12 (tavan korundu, endpoint eklenmedi).
-- Kod commit'leri [skip ci] YOK; bu kapanış doc commit'i [skip ci] VAR.
-- Canlı: router + ikonlar + giriş logosu/animasyonu ✅. Topbar mark görünüyor, animasyon iOS'ta ⚠️.
+- Oturum başı HEAD: **b1f2b63** (213 kapanış doc [skip ci], öncesi f314465). Tree temiz,
+  api/*.js=12.
+- Bu oturum: **kod push'u YOK** (tüm iş DB + panel + hazırlanan patch). proje_liste.html
+  patch'i Cihat'ın makinesinde kopyalanıp push edilecek (gpc, [skip ci] YOK, pull --rebase).
+- api/*.js=12 korundu — yeni endpoint yok.
 
-## Sonraki oturum (209) — detay CLAUDE-SONRAKI-OTURUM.md
-- Topbar mark animasyonu iOS fix (web kalıbı) VEYA kabul edilebilir bırak.
-- Sıra 4: MIslemler "Uygulamalar" butonu + 🔒 kalkar.
-- Sıra 7: MMusteri gerçek ekran (mockup-first, customers RLS).
-- Sıra 8: Kayıt/davet akışı (EN BÜYÜK) — §7 kararları kilitli.
+## Sonraki oturum (215) — detay CLAUDE-SONRAKI-OTURUM.md
+- **Öncelik: estetik cila** (213'ten devir) VE/VEYA proje_liste push testi + ekleme/tersane
+  bug'ı. Sonra Sıra 8 (davet 401 kök çözümü) ve son_giris fix.
