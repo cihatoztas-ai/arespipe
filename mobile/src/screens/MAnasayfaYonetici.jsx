@@ -138,6 +138,10 @@ export default function MAnasayfaYonetici({ kullanici }) {
       topbar={topbar}
       drawerAcik={drawerAcik}
       onDrawerKapat={() => setDrawerAcik(false)}
+      altBar
+      altBarAktif="anasayfa"
+      kullanici={kullanici}
+      onMenuClick={() => setDrawerAcik(true)}
     >
       {/* Hero */}
       <div style={s.hero}>

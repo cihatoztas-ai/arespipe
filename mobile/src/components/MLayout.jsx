@@ -1,38 +1,40 @@
 // mobile/src/components/MLayout.jsx
 // AresPipe Mobile — Ortak sayfa iskeleti (Sıra 11 / Oturum 213)
 //
-// TEK KAYNAK: 100dvh flex kolon iskeleti. Ekranlar artık kendi
-// `s.sayfa` + `s.scroll` kopyalarını taşımaz; hepsi buraya girer.
+// TEK KAYNAK: 100dvh flex kolon iskeleti + opsiyonel yüzen alt bar.
 //
-// Tasarım (Oturum 213 kararı, A = topbar slot):
-//   - topbar SLOT olarak alınır — MLayout topbar'ı SAHİPLENMEZ.
-//     Her ekran kendi topbar JSX'ini verir (kök: logo+avatar,
-//     detay: geri+baslik). Böylece MDevreler'in arama barı /
-//     MDevreDetay'ın sekmeleri kırılmaz.
+// Tasarım (A = topbar slot):
+//   - topbar SLOT — MLayout topbar'ı sahiplenmez, ekran kendi verir.
 //   - İçerik `flex:1; minHeight:0; overflow-y:auto` scroll alanına girer.
-//     minHeight:0 kritik — flex item default min-height:auto olduğundan
-//     içerik taşınca scroll çalışmaz; 0 vermeden overflow kilitlenir.
-//   - MDrawer opsiyonel: onDrawerKapat verilirse MLayout mount eder
-//     (4 kök ekran ayrı ayrı mount ediyordu — tek yere alındı).
+//     minHeight:0 kritik: flex item default min-height:auto → overflow kilitlenir.
+//   - altBar=true iken yüzen MBottomNav overlay olarak basılır (absolute).
+//     Yüzen olduğundan yer kaplamaz; içerik altından akar. Scroll alanına
+//     bar yüksekliği kadar alt boşluk eklenir ki son içerik bar'ın altında
+//     saklanmasın (WhatsApp kalıbı).
+//   - MDrawer opsiyonel: onDrawerKapat verilirse MLayout mount eder.
 //
-// NOT: Eski `.m-topbar` (position:fixed) + `.m-page` padding hilesi
-// KULLANILMAZ. Fixed + padding matematiği IbSpoolDetay'daki ölü alanın
-// kaynağıydı; flex iskelet bunu tamamen ortadan kaldırır.
+// Eski `.m-topbar` (fixed) + `.m-page` padding hilesi KULLANILMAZ — flex iskelet.
 
 import MDrawer from './MDrawer'
+import MBottomNav from './MBottomNav'
 
 export default function MLayout({
-  topbar = null,          // Ekranın topbar JSX'i (slot). flexShrink:0 kendi içinde.
-  children,               // Scroll alanına girer.
-  drawerAcik = false,     // MDrawer açık state'i.
-  onDrawerKapat = null,   // Verilirse MDrawer mount edilir; verilmezse drawer yok.
-  scrollRef = null,       // Opsiyonel — scroll DOM erişimi (nadiren).
-  scrollStil = null,      // Opsiyonel — scroll alanı ek stil override.
+  topbar = null,
+  children,
+  drawerAcik = false,
+  onDrawerKapat = null,
+  altBar = false,          // yüzen alt bar göster
+  altBarAktif = null,      // 'anasayfa' | 'devreler' | 'uygulamalar'
+  kullanici = null,        // bar avatarı için
+  onMenuClick = null,      // bar Menü sekmesi → drawer aç
+  scrollRef = null,
+  scrollStil = null,
   arkaPlan = 'var(--bg)',
 }) {
   return (
     <div
       style={{
+        position: 'relative',
         height: '100dvh',
         display: 'flex',
         flexDirection: 'column',
@@ -50,11 +52,22 @@ export default function MLayout({
           minHeight: 0,
           overflowY: 'auto',
           WebkitOverflowScrolling: 'touch',
+          paddingBottom: altBar
+            ? 'calc(92px + env(safe-area-inset-bottom))'
+            : undefined,
           ...(scrollStil || null),
         }}
       >
         {children}
       </div>
+
+      {altBar && (
+        <MBottomNav
+          aktif={altBarAktif}
+          kullanici={kullanici}
+          onMenuClick={onMenuClick}
+        />
+      )}
 
       {onDrawerKapat && (
         <MDrawer acik={drawerAcik} kapat={onDrawerKapat} />

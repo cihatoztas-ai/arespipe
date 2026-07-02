@@ -1,131 +1,141 @@
 // mobile/src/components/MBottomNav.jsx
-// AresPipe Mobile — Alt Navigasyon (paylaşılan)
-// 5 sekme: Ana Sayfa · Ara · QR (FAB ortada) · Bildirim · Menü
-// Sınıflar ares-mobile.css'ten gelir: .m-bottomnav, .m-nav-item, .m-nav-item.active,
-// .m-nav-icon, .m-nav-label, .m-nav-qr, .m-nav-qr-btn
+// AresPipe Mobile — Yüzen alt navigasyon (Oturum 213 / Sıra 11)
+//
+// WhatsApp dili: yüzen pill, blur + yarı-şeffaf zemin (arka içerik seçilir),
+// aktif sekmede hafif accent kabartma. Ekranın dibine yapışık DEĞİL — kenardan
+// boşluklu, alan öldürmez (içerik altından akar).
+//
+// 4 sabit slot: Ana Sayfa · Devreler · Uygulamalar · Menü(avatar).
+//   (Ortadaki büyük AI butonu sonraya — kullanıma göre eklenecek.)
+//
+// Eski 5-slot + QR FAB kaldırıldı (QR artık İş Başlat akışı içinde).
+// Stiller inline + CSS var (--sur/--tx/--txd/--ac/--bor) → tema otomatik.
+// Yarı-şeffaflık: color-mix (iOS Safari 16.2+); desteklenmezse solid var(--sur).
 
 import { useNavigate } from 'react-router-dom'
 import { useT } from '../lib/i18n'
 
-// SVG ikonlar — ares-mobile.js'teki homeIcon/searchIcon vs ile birebir
 const HomeIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+  <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="1.9">
     <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
     <polyline points="9 22 9 12 15 12 15 22" />
   </svg>
 )
 
-const SearchIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-    <circle cx="11" cy="11" r="8" />
-    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+const DevreIcon = () => (
+  <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="1.9">
+    <rect x="3" y="3" width="7" height="7" rx="1" />
+    <rect x="14" y="3" width="7" height="7" rx="1" />
+    <rect x="3" y="14" width="7" height="7" rx="1" />
+    <rect x="14" y="14" width="7" height="7" rx="1" />
   </svg>
 )
 
-const QrIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-    <rect x="3" y="3" width="7" height="7" />
-    <rect x="14" y="3" width="7" height="7" />
-    <rect x="3" y="14" width="7" height="7" />
-    <rect x="14" y="14" width="3" height="3" />
-    <rect x="18" y="14" width="3" height="3" />
-    <rect x="14" y="18" width="3" height="3" />
-    <rect x="18" y="18" width="3" height="3" />
+const AppsIcon = () => (
+  <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="1.9">
+    <circle cx="6" cy="6" r="2.4" />
+    <circle cx="18" cy="6" r="2.4" />
+    <circle cx="6" cy="18" r="2.4" />
+    <circle cx="18" cy="18" r="2.4" />
+    <circle cx="12" cy="12" r="2.4" />
   </svg>
 )
 
-const BellIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-    <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" />
-  </svg>
-)
-
-const MenuIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-    <line x1="3" y1="12" x2="21" y2="12" />
-    <line x1="3" y1="6"  x2="21" y2="6" />
-    <line x1="3" y1="18" x2="21" y2="18" />
-  </svg>
-)
-
-export default function MBottomNav({
-  aktif,            // 'anasayfa' | 'ara' | 'bildirim' (qr ve menü active olmaz)
-  qrAktif,          // boolean — false olduğunda FAB pasif görünür
-  onQrClick,        // FAB tıklama (rol pasifse toast atılması üst bileşene bırakıldı)
-  onMenuClick,      // Menü sekmesi tıklanınca drawer açılır
-  bildirimSayisi,   // > 0 ise kırmızı badge
-}) {
+export default function MBottomNav({ aktif, kullanici, onMenuClick }) {
   const navigate = useNavigate()
   const { tv } = useT()
 
-  const sinif = (k) => 'm-nav-item' + (aktif === k ? ' active' : '')
-  const bs = Number(bildirimSayisi) || 0
+  const bas = (kullanici?.ad_soyad || kullanici?.email || '?').charAt(0).toUpperCase()
 
-  return (
-    <nav className="m-bottomnav">
-      {/* 1 — Ana Sayfa */}
-      <button type="button" className={sinif('anasayfa')} onClick={() => navigate('/')}>
-        <div className="m-nav-icon"><HomeIcon /></div>
-        <span className="m-nav-label">{tv('mob_nav_anasayfa', 'Ana Sayfa')}</span>
-      </button>
-
-      {/* 2 — Ara */}
-      <button type="button" className={sinif('ara')} onClick={() => navigate('/ara')}>
-        <div className="m-nav-icon"><SearchIcon /></div>
-        <span className="m-nav-label">{tv('mob_nav_ara', 'Ara')}</span>
-      </button>
-
-      {/* 3 — QR (FAB) */}
-      <div className="m-nav-qr">
-        <button
-          type="button"
-          className="m-nav-qr-btn"
-          onClick={onQrClick}
-          aria-label={tv('m_ib_qr_tara', 'QR Tara')}
-          aria-disabled={qrAktif ? 'false' : 'true'}
-          style={qrAktif ? undefined : {
-            background: 'var(--bor)',
-            cursor: 'not-allowed',
-          }}
-        >
-          <QrIcon />
-        </button>
-      </div>
-
-      {/* 4 — Bildirim */}
+  const Item = ({ k, etiket, onClick, cocuk }) => {
+    const secili = aktif === k
+    return (
       <button
         type="button"
-        className={sinif('bildirim')}
-        onClick={() => navigate('/bildirim')}
-        style={{ position: 'relative' }}
+        onClick={onClick}
+        aria-label={etiket}
+        aria-current={secili ? 'page' : undefined}
+        style={{
+          ...s.item,
+          ...(secili ? s.itemAktif : null),
+          color: secili ? 'var(--ac)' : 'var(--txd)',
+        }}
       >
-        {bs > 0 && (
-          <span style={{
-            position: 'absolute',
-            top: 6,
-            right: 18,
-            background: 'var(--re)',
-            color: '#fff',
-            fontSize: 9,
-            fontWeight: 600,
-            borderRadius: 8,
-            padding: '1px 5px',
-            minWidth: 14,
-            textAlign: 'center',
-            lineHeight: 1.4,
-          }}>
-            {bs > 99 ? '99+' : bs}
-          </span>
-        )}
-        <div className="m-nav-icon"><BellIcon /></div>
-        <span className="m-nav-label">{tv('mob_nav_bildirim', 'Bildirim')}</span>
+        {cocuk}
+        <span style={s.etiket}>{etiket}</span>
       </button>
+    )
+  }
 
-      {/* 5 — Menü (drawer açar) */}
-      <button type="button" className="m-nav-item" onClick={onMenuClick}>
-        <div className="m-nav-icon"><MenuIcon /></div>
-        <span className="m-nav-label">{tv('mob_nav_menu', 'Menü')}</span>
+  return (
+    <nav style={s.bar} aria-label={tv('mob_nav_baslik', 'Navigasyon')}>
+      <Item k="anasayfa"    etiket={tv('mob_nav_anasayfa', 'Ana Sayfa')}    onClick={() => navigate('/')}            cocuk={<HomeIcon />} />
+      <Item k="devreler"    etiket={tv('mob_nav_devreler', 'Devreler')}     onClick={() => navigate('/devreler')}    cocuk={<DevreIcon />} />
+      <Item k="uygulamalar" etiket={tv('mob_nav_uygulama', 'Uygulama')}     onClick={() => navigate('/uygulamalar')} cocuk={<AppsIcon />} />
+      <button
+        type="button"
+        onClick={onMenuClick}
+        aria-label={tv('mob_nav_menu', 'Menü')}
+        style={s.item}
+      >
+        <div style={s.avatar}>{bas}</div>
+        <span style={{ ...s.etiket, color: 'var(--txd)' }}>{tv('mob_nav_menu', 'Menü')}</span>
       </button>
     </nav>
   )
+}
+
+const s = {
+  bar: {
+    position: 'absolute',
+    left: 14,
+    right: 14,
+    bottom: 'calc(14px + env(safe-area-inset-bottom))',
+    height: 62,
+    borderRadius: 26,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    padding: '0 6px',
+    zIndex: 40,
+    border: '1px solid var(--bor)',
+    background: 'color-mix(in srgb, var(--sur) 82%, transparent)',
+    backdropFilter: 'blur(18px)',
+    WebkitBackdropFilter: 'blur(18px)',
+    boxShadow: '0 6px 24px rgba(0,0,0,0.18)',
+  },
+  item: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 3,
+    padding: '6px 12px',
+    background: 'transparent',
+    border: 'none',
+    borderRadius: 16,
+    cursor: 'pointer',
+    color: 'var(--txd)',
+    WebkitTapHighlightColor: 'transparent',
+  },
+  itemAktif: {
+    background: 'rgba(45,142,255,0.15)',
+  },
+  etiket: {
+    fontSize: 10,
+    fontWeight: 500,
+  },
+  avatar: {
+    width: 30,
+    height: 30,
+    borderRadius: '50%',
+    background: 'var(--sur2)',
+    border: '1px solid var(--bor)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontFamily: "'Barlow Condensed', sans-serif",
+    fontSize: 13,
+    fontWeight: 700,
+    color: 'var(--tx)',
+  },
 }

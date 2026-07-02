@@ -70,6 +70,10 @@ export default function MUygulamalar({ kullanici = null, anaSayfaModu = false })
         topbar={topbar}
         drawerAcik={drawerAcik}
         onDrawerKapat={() => setDrawerAcik(false)}
+        altBar
+        altBarAktif="uygulamalar"
+        kullanici={kullanici}
+        onMenuClick={() => setDrawerAcik(true)}
       >
         {anaSayfaModu ? (
           /* Ana sayfa modu — hero + uygulamalarınız başlığı */
