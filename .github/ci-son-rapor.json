@@ -1,13 +1,13 @@
 {
-  "tarih": "2026-07-02T10:30:11.334Z",
-  "commit_sha": "f3144655272d7fcc55902084d567d50588bdb092",
+  "tarih": "2026-07-02T12:57:57.970Z",
+  "commit_sha": "d1a35c1deaf3e6ed88071de7ea48200371d37ee3",
   "commit_ref": "main",
-  "workflow_run": 1223,
+  "workflow_run": 1224,
   "ozet": {
     "hata": 0,
-    "uyari": 114,
+    "uyari": 115,
     "taranan_dosya": 148,
-    "sorunlu_dosya": 8,
+    "sorunlu_dosya": 9,
     "durum": "sari"
   },
   "kurallar": {
@@ -56,7 +56,7 @@
     "I18N_EKSIK": {
       "tip": "uyari",
       "mesaj": "tv('dv_stage_on_imalat') kullanılıyor ama lang/tr.json'da yok",
-      "sayi": 107,
+      "sayi": 108,
       "dosyalar": [
         {
           "dosya": "devre_detay.html",
@@ -165,6 +165,13 @@
           "satirlar": [
             287,
             359
+          ]
+        },
+        {
+          "dosya": "proje_liste.html",
+          "sayi": 1,
+          "satirlar": [
+            947
           ]
         },
         {
@@ -843,6 +850,19 @@
           "tip": "uyari",
           "satir": 187,
           "mesaj": "Güvensiz geri dönüş. Explicit URL yönlendirmesi kullan."
+        }
+      ]
+    },
+    {
+      "dosya": "proje_liste.html",
+      "hata_sayisi": 0,
+      "uyari_sayisi": 1,
+      "hatalar": [
+        {
+          "kod": "I18N_EKSIK",
+          "tip": "uyari",
+          "satir": 947,
+          "mesaj": "tv('pl_delete_fail') kullanılıyor ama lang/tr.json'da yok"
         }
       ]
     },
