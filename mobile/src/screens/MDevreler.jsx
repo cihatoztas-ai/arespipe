@@ -25,7 +25,8 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useT } from '../lib/i18n'
 import { getOturum, getTenantId } from '../lib/auth'
-import MDrawer from '../components/MDrawer'
+import MLayout from '../components/MLayout'
+import MMarkLogo from '../components/MMarkLogo'
 
 // ───────────────────────── Sabitler ─────────────────────────
 
@@ -55,6 +56,7 @@ export default function MDevreler() {
 
   // UI state
   const [drawerAcik, setDrawerAcik] = useState(false)
+  const [kullanici, setKullanici] = useState(null)
   const [filtreAcik, setFiltreAcik] = useState(false)
   const [sortAcik, setSortAcik] = useState(false)
   const [arama, setArama] = useState('')
@@ -65,6 +67,24 @@ export default function MDevreler() {
   const [acikAkordionlar, setAcikAkordionlar] = useState({
     firma: false, proje: false, malzeme: false, yuzey: false,
   })
+
+  // ─── Bar avatarı için kullanıcı (hafif) ───
+  useEffect(() => {
+    let iptal = false
+    ;(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session || iptal) return
+        const { data } = await supabase
+          .from('kullanicilar')
+          .select('id, ad_soyad, email')
+          .eq('id', session.user.id)
+          .single()
+        if (!iptal && data) setKullanici(data)
+      } catch (e) { /* sessiz — avatar fallback '?' */ }
+    })()
+    return () => { iptal = true }
+  }, [])
 
   // ─── Yükleme ───
   useEffect(() => {
@@ -322,25 +342,31 @@ export default function MDevreler() {
   function devreAc(id) { navigate('/devre/' + id) }
 
   // ─── Render ───
-  return (
-    <div style={s.page}>
-      {/* TOPBAR */}
-      <div style={s.topbar}>
-        <button style={s.tbBtn} onClick={() => navigate(-1)} aria-label={tv('m_dvr_geri', 'Geri')}>
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="15 18 9 12 15 6"/>
-          </svg>
-        </button>
-        <div style={s.tbTitle}>{tv('m_dvr_baslik', 'Aktif Devreler')}</div>
-        <button style={s.tbBtn} onClick={() => setDrawerAcik(true)} aria-label={tv('m_drawer_profil', 'Menü')}>
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="3" y1="12" x2="21" y2="12"/>
-            <line x1="3" y1="6" x2="21" y2="6"/>
-            <line x1="3" y1="18" x2="21" y2="18"/>
-          </svg>
-        </button>
-      </div>
+  const topbar = (
+    <div style={s.topbarStd}>
+      <MMarkLogo style={{ width: 30, height: 30, display: 'block', flexShrink: 0 }} />
+      <div style={s.topbarStdTitle}>{tv('m_dvr_baslik', 'Aktif Devreler')}</div>
+      <button
+        style={s.topbarStdBtn}
+        onClick={() => setDrawerAcik(true)}
+        aria-label={tv('m_drawer_profil', 'Profil')}
+      >
+        {(kullanici?.ad_soyad || kullanici?.email || '?').charAt(0).toUpperCase()}
+      </button>
+    </div>
+  )
 
+  return (
+    <MLayout
+      topbar={topbar}
+      icerikKaydir={false}
+      altBar
+      altBarAktif="devreler"
+      kullanici={kullanici}
+      onMenuClick={() => setDrawerAcik(true)}
+      drawerAcik={drawerAcik}
+      onDrawerKapat={() => setDrawerAcik(false)}
+    >
       {/* SEARCH / FILTER / SORT BAR */}
       <div style={s.qb}>
         <label style={s.qbInput}>
@@ -714,9 +740,7 @@ export default function MDevreler() {
         @keyframes mDvrShim { 0% { background-position: -300px 0; } 100% { background-position: 300px 0; } }
       `}</style>
 
-      {/* DRAWER */}
-      <MDrawer acik={drawerAcik} kapat={() => setDrawerAcik(false)} />
-    </div>
+    </MLayout>
   )
 }
 
@@ -747,6 +771,28 @@ function sortFallback(k) {
 // ─────── Stiller ───────
 
 const s = {
+  topbarStd: {
+    flexShrink: 0,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    padding: '0 12px',
+    background: 'var(--sur)',
+    borderBottom: '1px solid var(--bor)',
+    paddingTop: 'env(safe-area-inset-top)',
+    height: 'calc(56px + env(safe-area-inset-top))',
+  },
+  topbarStdTitle: { flex: 1, fontSize: 16, fontWeight: 700, color: 'var(--tx)' },
+  topbarStdBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    background: 'var(--sur2)',
+    border: '1px solid var(--bor)',
+    color: 'var(--tx)',
+    fontSize: 15, fontWeight: 700,
+    cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    flexShrink: 0,
+  },
   page: {
     height: '100dvh',
     display: 'flex',
@@ -883,9 +929,10 @@ const s = {
 
   dl: {
     flex: 1,
+    minHeight: 0,
     overflowY: 'auto',
     overflowX: 'hidden',
-    padding: '9px 11px 100px',
+    padding: '9px 11px calc(96px + env(safe-area-inset-bottom))',
     scrollbarWidth: 'none',
   },
   iskelet: {
