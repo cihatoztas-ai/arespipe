@@ -5,13 +5,16 @@
 // - Tıklayınca → grubun hedef sayfasına yönlendirir
 //
 // Hem yönetici "İşlem Başlat"tan gelince hem de operatörün ana ekranı olarak kullanılır.
+//
+// 213/Sıra 11: Ortak iskelet MLayout'a taşındı + yüzen alt bar (kök ekran,
+//   aktif="anasayfa"). Topbar slot; MDrawer'ı MLayout mount eder.
 
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useT } from '../lib/i18n'
 import { getKullaniciGruplari } from '../lib/yetki'
 import { getGrupBilgisi } from '../lib/gruplar'
-import MDrawer from '../components/MDrawer'
+import MLayout from '../components/MLayout'
 import MMarkLogo from '../components/MMarkLogo'
 
 export default function MIslemler({ kullanici }) {
@@ -48,104 +51,104 @@ export default function MIslemler({ kullanici }) {
     navigate(hedef)
   }
 
-  function yakinda(metin) {
-    alert(tv('m_toast_yakinda', '{sayfa} sayfası yakında').replace('{sayfa}', metin))
-  }
+  // ── Topbar (slot) ──
+  const topbar = (
+    <div style={s.topbar}>
+      <MMarkLogo style={s.topbarLogo} />
+      <div style={s.topbarTitle}>{tv('m_app_title', 'AresPipe')}</div>
+      <button
+        style={s.profilBtn}
+        onClick={() => setDrawerAcik(true)}
+        aria-label={tv('m_drawer_profil', 'Profil')}
+      >
+        {(kullanici?.ad_soyad || kullanici?.email || '?').charAt(0).toUpperCase()}
+      </button>
+    </div>
+  )
 
   return (
-    <div style={s.sayfa}>
-      {/* Topbar */}
-      <div style={s.topbar}>
-        <MMarkLogo style={s.topbarLogo} />
-        <div style={s.topbarTitle}>{tv('m_app_title', 'AresPipe')}</div>
-        <button
-          style={s.profilBtn}
-          onClick={() => setDrawerAcik(true)}
-          aria-label={tv('m_drawer_profil', 'Profil')}
-        >
-          {(kullanici?.ad_soyad || kullanici?.email || '?').charAt(0).toUpperCase()}
-        </button>
+    <MLayout
+      topbar={topbar}
+      drawerAcik={drawerAcik}
+      onDrawerKapat={() => setDrawerAcik(false)}
+      altBar
+      altBarAktif="anasayfa"
+      kullanici={kullanici}
+      onMenuClick={() => setDrawerAcik(true)}
+    >
+      {/* Hero */}
+      <div style={s.hero}>
+        <div style={s.heroGreeting}>{tv(selamlamaKey, 'Günaydın')}</div>
+        <div style={s.heroName}>
+          {kullanici?.ad_soyad || kullanici?.email || tv('m_kullanici', 'Kullanıcı')}
+        </div>
+        {rolLabel && <div style={s.heroMeta}>{rolLabel}</div>}
       </div>
 
-      {/* Scroll alan */}
-      <div style={s.scroll}>
-
-        {/* Hero */}
-        <div style={s.hero}>
-          <div style={s.heroGreeting}>{tv(selamlamaKey, 'Günaydın')}</div>
-          <div style={s.heroName}>
-            {kullanici?.ad_soyad || kullanici?.email || tv('m_kullanici', 'Kullanıcı')}
-          </div>
-          {rolLabel && <div style={s.heroMeta}>{rolLabel}</div>}
+      {/* Başlık */}
+      <div style={s.sectionRow}>
+        <div style={s.sectionTitle}>
+          {tv('m_islemler_soru', 'Ne yapacaksınız?')}
         </div>
+      </div>
 
-        {/* Başlık */}
-        <div style={s.sectionRow}>
-          <div style={s.sectionTitle}>
-            {tv('m_islemler_soru', 'Ne yapacaksınız?')}
-          </div>
+      {/* Buton listesi (yetki bloğu olanlar; bloğu olmayan zaten router'da MUygulamalar'a gider) */}
+      {gruplar === null && !hata ? (
+        <div style={s.bosDurum}>•••</div>
+      ) : hata ? (
+        <div style={{ ...s.bosDurum, color: 'var(--re)' }}>{hata}</div>
+      ) : (
+        <div style={s.butonListe}>
+          {gruplar.map((grup) => {
+            const bilgi = getGrupBilgisi(grup.grup_adi)
+            const label = bilgi.i18n
+              ? tv(bilgi.i18n, grup.grup_adi)
+              : grup.grup_adi
+
+            return (
+              <GrupButonu
+                key={grup.grup_adi}
+                ikon={bilgi.ikon}
+                renk={bilgi.renk}
+                baslik={label}
+                altbaslik={tv('m_islem_baslat_alt', 'QR okut, işe başla')}
+                onClick={() => grubaGit(grup.grup_adi)}
+              />
+            )
+          })}
+
+          {/* QR Tara — herkese açık, blok gerektirmez */}
+          <GrupButonu
+            ikon="📷"
+            renk="var(--ac)"
+            baslik={tv('m_kart_qr_tara', 'QR Tara')}
+            altbaslik={tv('m_kart_qr_tara_alt', 'Spool bilgisini gör')}
+            onClick={() => navigate('/qr')}
+          />
         </div>
+      )}
 
-        {/* Buton listesi (yetki bloğu olanlar; bloğu olmayan zaten router'da MUygulamalar'a gider) */}
-        {gruplar === null && !hata ? (
-          <div style={s.bosDurum}>•••</div>
-        ) : hata ? (
-          <div style={{ ...s.bosDurum, color: 'var(--re)' }}>{hata}</div>
-        ) : (
+      {/* Uygulamalar — herkese açık, blok gerektirmez (§2) */}
+      {gruplar !== null && !hata && (
+        <>
+          <div style={s.sectionRow}>
+            <div style={s.sectionTitle}>{tv('m_uyg_basligi', 'Uygulamalar')}</div>
+          </div>
           <div style={s.butonListe}>
-            {gruplar.map((grup) => {
-              const bilgi = getGrupBilgisi(grup.grup_adi)
-              const label = bilgi.i18n
-                ? tv(bilgi.i18n, grup.grup_adi)
-                : grup.grup_adi
-
-              return (
-                <GrupButonu
-                  key={grup.grup_adi}
-                  ikon={bilgi.ikon}
-                  renk={bilgi.renk}
-                  baslik={label}
-                  altbaslik={tv('m_islem_baslat_alt', 'QR okut, işe başla')}
-                  onClick={() => grubaGit(grup.grup_adi)}
-                />
-              )
-            })}
-
-            {/* QR Tara — herkese açık, blok gerektirmez */}
             <GrupButonu
-              ikon="📷"
+              ikon="📚"
               renk="var(--ac)"
-              baslik={tv('m_kart_qr_tara', 'QR Tara')}
-              altbaslik={tv('m_kart_qr_tara_alt', 'Spool bilgisini gör')}
-              onClick={() => navigate('/qr')}
+              baslik={tv('m_uyg_basligi', 'Uygulamalar')}
+              altbaslik={tv('m_uyg_basligi_alt', 'Uygulamalarınız')}
+              onClick={() => navigate('/uygulamalar')}
             />
           </div>
-        )}
+        </>
+      )}
 
-        {/* Uygulamalar — herkese açık, blok gerektirmez (§2) */}
-        {gruplar !== null && !hata && (
-          <>
-            <div style={s.sectionRow}>
-              <div style={s.sectionTitle}>{tv('m_uyg_basligi', 'Uygulamalar')}</div>
-            </div>
-            <div style={s.butonListe}>
-              <GrupButonu
-                ikon="📚"
-                renk="var(--ac)"
-                baslik={tv('m_uyg_basligi', 'Uygulamalar')}
-                altbaslik={tv('m_uyg_basligi_alt', 'Uygulamalarınız')}
-                onClick={() => navigate('/uygulamalar')}
-              />
-            </div>
-          </>
-        )}
-
-        {/* Alt boşluk safe-area */}
-        <div style={{ height: 'calc(24px + env(safe-area-inset-bottom))' }} />
-      </div>
-
-      <MDrawer acik={drawerAcik} kapat={() => setDrawerAcik(false)} />
-    </div>
+      {/* Alt boşluk safe-area */}
+      <div style={{ height: 'calc(24px + env(safe-area-inset-bottom))' }} />
+    </MLayout>
   )
 }
 
@@ -166,16 +169,9 @@ function GrupButonu({ ikon, renk, baslik, altbaslik, onClick }) {
   )
 }
 
-/* ─── Stiller ─── */
+/* ─── Stiller (s.sayfa/s.scroll MLayout'a taşındı) ─── */
 
 const s = {
-  sayfa: {
-    height: '100dvh',
-    display: 'flex',
-    flexDirection: 'column',
-    background: 'var(--bg)',
-    color: 'var(--tx)',
-  },
   topbar: {
     flexShrink: 0,
     display: 'flex',
@@ -198,16 +194,6 @@ const s = {
     fontWeight: 700,
     color: 'var(--tx)',
   },
-  topbarBtn: {
-    background: 'transparent',
-    border: 'none',
-    color: 'var(--tx)',
-    padding: 8,
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   profilBtn: {
     width: 40, height: 40, borderRadius: 20,
     background: 'var(--sur2)',
@@ -217,11 +203,6 @@ const s = {
     cursor: 'pointer',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     flexShrink: 0,
-  },
-  scroll: {
-    flex: 1,
-    overflowY: 'auto',
-    WebkitOverflowScrolling: 'touch',
   },
   hero: {
     background: 'var(--sur)',
