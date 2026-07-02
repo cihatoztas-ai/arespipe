@@ -33,10 +33,43 @@ else var ARES = (function () {
   let _supaHazir = false;
   let _supaKuyruk = [];
 
-  function _supaBaslat() {
+  async function _supaBaslat() {
     try {
       if (typeof window !== 'undefined' && window.supabase) {
-        _supa      = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+        const _client = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+        // ── 215/A: EAGER HYDRATION ───────────────────────────────
+        // Oturum varsa _oturum'u JWT claim'lerinden HEMEN doldur; boylece
+        // tenantId() her sayfada, sayfanin oturumKontrol cagirip cagirmadigindan
+        // BAGIMSIZ olarak dolu gelir. _supa yalnizca hydration sonrasi atanir —
+        // ARES.supabase() non-null donunce _oturum garanti hazirdir (race yok).
+        try {
+          const { data: { session } } = await _client.auth.getSession();
+          if (session) {
+            const claims  = JSON.parse(atob(session.access_token.split('.')[1]));
+            const appMeta = claims.app_metadata || {};
+            _oturum = {
+              id:         session.user.id,
+              tenant_id:  appMeta.tenant_id || claims.tenant_id || null,
+              rol:        appMeta.rol       || claims.rol       || null,
+              ad_soyad:   session.user.user_metadata?.ad_soyad || session.user.email,
+              gercek_rol: appMeta.rol       || claims.rol       || null,
+            };
+            // view-as (super_admin baska firma gozunden) — oturumKontrol ile ayni davranis
+            const viewAs = sessionStorage.getItem('ares_view_as');
+            if (viewAs && _oturum.gercek_rol === 'super_admin') {
+              try {
+                const va = JSON.parse(viewAs);
+                _oturum.view_as    = true;
+                _oturum.view_as_ad = va.ad;
+                _oturum.tenant_id  = va.tenant_id;
+                _oturum.rol        = 'firma_admin';
+              } catch (e) {}
+            }
+          }
+        } catch (e) {
+          console.warn('[ARES] eager hydration atlandi:', e.message);
+        }
+        _supa      = _client;
         _supaHazir = true;
         console.log('[ARES] Supabase bağlantısı kuruldu');
         // Modu otomatik supabase'e al
