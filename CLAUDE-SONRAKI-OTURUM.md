@@ -1,69 +1,72 @@
-# Sıradaki Oturum (213) — Ajanda
+# Sıradaki Oturum (214) — Ajanda
 
 ## 0. Açılış ritüeli
-`git pull origin main` · `git status` · `git log --oneline -5` · `ls api/*.js | wc -l` (≤12) · handoff oku.
-**Ek (zorunlu):** `docs/MOBIL-STRATEJI.md` + `docs/CLAUDE-MOBILE.md` §9 (layout kuralları).
-Beklenen HEAD: 212 kapanış doc commit'i [skip ci] (+ bot ci). Öncesi f9d7429 (MDevreler tap fix).
+`git pull origin main` · `git status` · `git log --oneline -5` · `ls api/*.js | wc -l`
+(≤12) · handoff oku. **Ek:** `docs/MOBIL-STRATEJI.md` + `docs/CLAUDE-MOBILE.md` §9.
+Beklenen HEAD: 213 kapanış doc commit'i [skip ci] (+ bot ci). Öncesi **f314465**
+(Sıra 11 son parça).
 
-## 1. Durum (212 kapanışı)
-- **112 migration canlı** — `kullanicilar.customer_id` FK → customers(id) teyitli. 208 blokörü kapandı.
-  Sıra 7 önkoşulunun DB tarafı hazır; ama `customer_project_access` tablosu HENÜZ YOK (2. yarı).
-- **MDevreler tap bug ÇÖZÜLDÜ (f9d7429)** — kart giriş animasyonu (translateY) hit-test kaydırıyordu,
-  animasyon tamamen kaldırıldı. Deploy testi Cihat'ta (tek dokunuşta açılıyor mu — teyit et).
-- **Sıra 7 (MMusteri) ERTELENDİ** — web-first (Cihat kararı).
-- api/*.js=12 sabit.
+## 1. Durum (213 kapanışı — Sıra 11 ana gövde TAMAM)
+Kök ekranlar (dashboard·işlemler·devreler·uygulamalar) tek `MLayout` + yüzen 4-slot
+alt bar. Detay ekranlar (spool detay, profil, İş Başlat) → sol-üst geri, bar yok.
+Devre detay → nötr bar + geri. Spool detay ölü alan giderildi (her iki mod 100dvh).
+MQRTara bilinçli MLayout dışında. api/*.js=12. **Cihat notu:** estetik beğenilmedi,
+fonksiyonel yeterli — cila öncelikli.
 
-## 2. EN ÖNCELİKLİ — Mobil layout standardizasyonu (Cihat: "baştan doğru, yarım kalmasın")
-**Problem (212'de 3 görselle tespit):** Ekranlar ortak bir layout iskeletini paylaşmıyor.
-- **MIsBaslat:** altta tab bar (Ana Sayfa / Ara / Bildirim / Menü) VAR.
-- **MAnasayfaYonetici:** aynı tab bar YOK.
-- **Spool detay (IbSpoolDetay / spool ekranı):** tab bar YOK + altta **kocaman ölü boşluk** (içerik
-  100dvh flex iskeletine oturmamış).
+## 2. EN ÖNCELİKLİ — Estetik cila (Cihat: "çok beğenmedim ama fonksiyonel yeterli")
+Yeni bir şey KIRMADAN görünümü zarifleştir. Adaylar:
+- **Geri tuşu:** MLayout `geri` slotunun görünümü (şu an sade 40x40 şeffaf chevron,
+  sol-üst). WhatsApp zarafetine yaklaştır — dokunma alanı, hizalama, opsiyonel hafif
+  daire zemin.
+- **Geri-başlık topbar** (İş Başlat): sol geri + orta başlık + sağ boş → sağ boşluk
+  dengesiz duruyor olabilir. Denge/başlık tipografisi gözden geçir.
+- **IbSpoolDetay ustBant:** geri tuşu spool adıyla aynı satıra sıkışmış (cramped).
+  Hiza + boşluk (geri | spool adı) düzelt. Zengin header (geri + ad + pill'ler +
+  sekmeler) bir bütün olarak WhatsApp-vari sadeleştirilebilir.
+- **R-10:** Görsel değişiklik → önce mockup, Cihat onayı, sonra kod.
 
-**Adım adım (DATA→UI→kod, MK-158.1 — körlemesine dokunma):**
-1. **HARİTALA (kod oku, tahmin etme):** Hangi ekran tab bar'ı nereden alıyor? grep ile bul:
-   - `grep -rln "Ana Sayfa\|Bildirim\|tabBar\|TabBar\|navBar\|BottomNav\|Menü" mobile/src/`
-   - Tab bar ayrı komponent mi (örn. `MTabBar`/`MAltMenu`) yoksa her ekranda inline mi?
-   - Hangi ekranlar onu render ediyor, hangileri etmiyor? Router (App.jsx) shell/layout wrapper var mı?
-   - Spool detay ölü alan: `100dvh` flex iskeleti (`flex:1 + overflow-y:auto` scroll alan) uygulanmış mı,
-     yoksa içerik sabit yükseklikte kalıp altı boş mu? (CLAUDE-MOBILE §9 kalıbı ile kıyasla.)
-2. **KARAR KURALI (Cihat'a A/B):** Tab bar hangi ekranlarda görünsün?
-   - Ana ekranlar (Anasayfa, İş Başlat/İşlemler, Ara, Bildirim, Menü) → tab bar VAR.
-   - Detay/wizard ekranları (spool detay, devre detay, İş Başlat wizard adımı) → tab bar GİZLİ, geri
-     butonu yeterli. (Kesin kararı Cihat verir.)
-3. **R-10 MOCKUP:** Standart iskelet mockup'ı — (a) topbar, (b) scroll içerik (flex:1, overflow-y:auto),
-   (c) tab bar (koşullu). Ölü-alan çözümü: içerik alanı flex:1 ile tüm boşluğu doldurur; kısa içerikte
-   alt boşluk normal, ama tab bar/safe-area doğru oturur. Cihat onaylamadan kod YOK.
-4. **TEK ORTAK MLayout:** Onaylı iskeletten `MLayout` (veya mevcut shell'i düzelt). Prop: `tabBarGoster`
-   (bool) veya route-temelli otomatik. Tüm ekranlar buna geçirilir — tek tek yamamak yerine tek kaynak.
-   Hafıza #10: mevcut stil objelerini/helper'ları oku-taşı, inline/yeni iskelet icat etme; CLAUDE-MOBILE
-   §9 kalıbını (100dvh flex, scrollbar gizle, safe-area padding) referans al.
-5. **Migrasyon:** Ekranları teker teker MLayout'a geçir; her birinde teslim listesi (§10) kontrol.
-   Büyük iş olabilir — kapsamı Cihat ile böl ama "yarım kalmasın" ilkesiyle mantıklı bir bütün bitir.
+## 3. Topbar birleştirme (tek kaynak) + ÇİFT AVATAR temizliği
+- Kök ekranların topbar'ı hâlâ EKRAN-BAŞINA inline (logo+başlık+avatar). Ortak bir
+  `MTopBar` (yeni/iyileştirilmiş) ile MLayout'a alınabilir → tek dosyadan yönetim.
+- **ÇİFT AVATAR:** kök ekranlarda hem topbar sağ-üst avatarı hem alt bar Menü avatarı
+  drawer açıyor (redundant). Biri kaldırılmalı. Muhtemel karar: topbar avatarını
+  kaldır (Menü bar'da), topbar'da sadece logo+başlık kalsın. Cihat'a A/B sor.
+- **Eski `MTopBar.jsx`** (fixed, artık kullanılmıyor) → `_arsiv/`'e taşı.
 
-**Not:** Bu iş IbSpoolDetay'ı da etkiler (211'de bifurcate edilmişti). Ölü alan orada; layout'u
-düzeltince footer/tab bar davranışı da netleşir. IbSpoolDetay footer'daki "İşlem Yap" köprüsü (9b) korunur.
+## 4. Sonra
+- **Açık-iş rozeti** (Cihat parkinglot): operatör İş Başlat kartlarında WhatsApp'vari
+  "+1" (açık işi olan işlem türünde). Altyapı HAZIR: `aktifIsleriDBdenSenkronize`
+  (login sonrası `is_kayitlari` bitis IS NULL → localStorage `ares_is_aktif`), 70b.B
+  planı. Eksik = UI: IbRolSec kart render'ına bağla. Önce `IbRolSec.jsx` + `lib/isbaslat`
+  oku (ares_is_aktif işlem-türü bazında ne tutuyor).
+- **Sıra 8 — Kayıt/davet akışı (EN BÜYÜK):** §7 kilitli (OTP+upsert davet,
+  rol='uygulama'+ortak tenant, çoklu rol serbest). Kod+DB birlikte.
+- **Sıra 7 — MMusteri (web-first):** DB önkoşulu 2. yarısı `customer_project_access`
+  (113 migration) + web olgunlaşınca mobile'a adapte.
 
-## 3. Alternatif / sonra
-- **Sıra 8 — Kayıt/davet akışı (EN BÜYÜK):** §7 kilitli (§7-1 OTP+upsert, §7-2 rol='uygulama'+ortak
-  tenant, §7-4 çoklu rol serbest). Kod+DB birlikte. Layout işinden bağımsız.
-- **Sıra 7 — MMusteri (web-first):** DB önkoşulu 2. yarısı `customer_project_access` (113 migration) +
-  web ekranı olgunlaşınca mobile'a adapte. Ertelendi.
+## 5. Devreden (küçük)
+- Ölü keyframe `mDvrFadeIn` (MDevreler) temizliği.
+- Üyelik paketi abonelik bağı (MProfil statik "Kurumsal").
+- `color-mix` alt bar şeffaflığı cihazda görsel teyit (iOS 16.2+).
+- İş Başlat rolSec `geri`=navigate(-1): operatör doğrudan girişte nereye döneceği
+  kontrol edilsin (dashboard/işlemler).
 
-## 4. Devreden (küçük)
-- Ölü keyframe `mDvrFadeIn` (MDevreler:710) temizliği.
-- Topbar mark animasyonu iOS Safari (208'den): SMIL beginElement() tutmuyor; kod duruyor.
-- Üyelik paketi abonelik bağı (209'dan): MProfil statik "Kurumsal".
-- Avatar canlı teyit (209'dan): upload + JWT tenant_id claim deploy testinde.
+## Mimari notlar (MLayout kullanımı — 214'te lazım)
+- **Kök ekran:** `<MLayout topbar={...} altBar altBarAktif="..." kullanici
+  onMenuClick drawerAcik onDrawerKapat>` — geri YOK.
+- **Basit detay ekran:** `<MLayout geri={fn} baslik="...">` — bar YOK, geri VAR.
+- **Sabit çubuk + kayan liste ekran (MDevreler/MDevreDetay):** `icerikKaydir={false}`
+  + ekran kendi iç scroll'u; liste paddingBottom bar boşluğu.
+- **Zengin header ekran (IbSpoolDetay):** MLayout dışı, kendi 100dvh scroller'ı +
+  ustBant içinde geri. Bar yok.
+- **Tam ekran (MQRTara):** MLayout YOK, kendi absolute layout'u.
 
 ## Disiplin (özet)
-Native React. R-10 mockup-first · R-08 i18n (root lang/{tr,en,ar}, tv(), satır-insert) · DATA→UI→kod
-(MK-158.1, iki-adım teşhis: hipotezi kod okuyarak doğrula) · önce mevcut kalıbı oku (MK-126.8) · kolon/
-tablo adı information_schema/canlı kod ile teyit (MK-85.3) · migration BEGIN/ROLLBACK dry-run →
-information_schema teyit → COMMIT (MK-200.5). **Hafıza #10:** yeni panel/layout = mevcut komponenti
-oku-taşı (s.* stil objeleri + lib/format helper'lar + CLAUDE-MOBILE §9 layout kalıbı), inline/iskelet
-icat etme. ≤12 api (MK-129.3). **Kod commit [skip ci] YOK** · canlı test = PUSH · **push öncesi
-pull --rebase** (bot ci-son-rapor.json fast-forward'u reddeder). **Patch akışı:** Python anchor patch +
-.bak + ABORT-on-mismatch + MARKER-idempotency (yeni ⊃ anchor tuzağı), JSX doğrulama (mobile/node_modules
-içi esbuild transformSync — ayrı `npx esbuild` KURMA, onay ister + flag hatası verir) + JSON validate
-(lang), container'da test → kanıtlanmış script Cihat'a. `gpc` yerine ayrı commit + tek push.
+Native React. R-10 mockup-first (özellikle estetik cila) · R-08 i18n · DATA→UI→kod
+(MK-158.1) · önce mevcut kalıbı oku (MK-126.8) · kolon/tablo information_schema
+teyidi (MK-85.3) · migration BEGIN/ROLLBACK dry-run → information_schema → COMMIT
+(MK-200.5). ≤12 api (MK-129.3). **Kod commit [skip ci] YOK; canlı test = PUSH; push
+öncesi pull --rebase.** Patch akışı: Python anchor + .bak + ABORT-on-mismatch +
+MARKER-idempotency + esbuild (mobile/node_modules içi transformSync) + container test →
+kanıtlanmış script/dosya + MD5. Büyük/karmaşık dosyayı düzenlerken tam kodu al
+(paste/upload) — tahminle dokunma.
