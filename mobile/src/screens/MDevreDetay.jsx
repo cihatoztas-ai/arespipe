@@ -22,6 +22,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useT } from '../lib/i18n'
 import { getTenantId } from '../lib/auth'
+import MLayout from '../components/MLayout'
 import {
   esc,
   formatSpoolId,
@@ -60,7 +61,7 @@ function getStageKey(s) {
 
 // ── CSS — inline style block, MSpoolDetay pattern ──────────────────────────
 const styleBlock = `
-.mdv-root { height: 100dvh; overflow: auto; background: var(--bg); color: var(--tx); position: relative; }
+.mdv-root { flex: 1; min-height: 0; overflow: auto; background: var(--bg); color: var(--tx); position: relative; }
 
 .mdv-topbar { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 8px; padding: 12px 14px; background: var(--bg); border-bottom: 1px solid var(--bor); }
 .mdv-back { width: 36px; height: 36px; border: none; background: transparent; color: var(--tx); display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; border-radius: 8px; }
@@ -112,7 +113,7 @@ const styleBlock = `
 .mdv-clear { font-size: 12px; color: var(--ac); font-weight: 600; background: transparent; border: none; cursor: pointer; padding: 4px 8px; font-family: inherit; }
 .mdv-clear:active { opacity: .6; }
 
-.mdv-list { padding: 10px 12px; }
+.mdv-list { padding: 10px 12px calc(96px + env(safe-area-inset-bottom)); }
 .mdv-card { display: flex; background: var(--sur); border: 1px solid var(--bor); border-radius: 10px; margin-bottom: 8px; overflow: hidden; cursor: pointer; }
 .mdv-card:active { opacity: .85; }
 .mdv-bar-l { width: 4px; flex-shrink: 0; }
@@ -153,6 +154,26 @@ export default function MDevreDetay() {
   const [aktifTab, setAktifTab] = useState('genel')
   const [secili, setSecili] = useState(new Set())
   const [arama, setArama] = useState('')
+  const [kullanici, setKullanici] = useState(null)
+  const [drawerAcik, setDrawerAcik] = useState(false)
+
+  // Bar avatarı için hafif kullanıcı fetch'i
+  useEffect(() => {
+    let iptal = false
+    ;(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session || iptal) return
+        const { data } = await supabase
+          .from('kullanicilar')
+          .select('id, ad_soyad, email')
+          .eq('id', session.user.id)
+          .single()
+        if (!iptal && data) setKullanici(data)
+      } catch (e) { /* sessiz — avatar fallback '?' */ }
+    })()
+    return () => { iptal = true }
+  }, [])
 
   // ── Veri yükle ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -242,6 +263,7 @@ export default function MDevreDetay() {
   // ── Render: yükleniyor / bulunamadı ───────────────────────────────────────
   if (yukleniyor) {
     return (
+      <Kabuk kullanici={kullanici} onMenu={() => setDrawerAcik(true)} drawerAcik={drawerAcik} onDrawerKapat={() => setDrawerAcik(false)}>
       <div className="mdv-root">
         <style>{styleBlock}</style>
         <div className="mdv-topbar">
@@ -254,11 +276,13 @@ export default function MDevreDetay() {
           <div className="mdv-skel" /><div className="mdv-skel" /><div className="mdv-skel" /><div className="mdv-skel" />
         </div>
       </div>
+      </Kabuk>
     )
   }
 
   if (bulunamadi) {
     return (
+      <Kabuk kullanici={kullanici} onMenu={() => setDrawerAcik(true)} drawerAcik={drawerAcik} onDrawerKapat={() => setDrawerAcik(false)}>
       <div className="mdv-root">
         <style>{styleBlock}</style>
         <div className="mdv-topbar">
@@ -272,6 +296,7 @@ export default function MDevreDetay() {
           <div className="mdv-empty-tx">{tv('mob_dv_bulunamadi', 'Devre bulunamadı')}</div>
         </div>
       </div>
+      </Kabuk>
     )
   }
 
@@ -421,6 +446,7 @@ export default function MDevreDetay() {
 
   // ── Render: Ana iskelet ───────────────────────────────────────────────────
   return (
+    <Kabuk kullanici={kullanici} onMenu={() => setDrawerAcik(true)} drawerAcik={drawerAcik} onDrawerKapat={() => setDrawerAcik(false)}>
     <div className="mdv-root">
       <style>{styleBlock}</style>
 
@@ -459,5 +485,26 @@ export default function MDevreDetay() {
         </div>
       )}
     </div>
+    </Kabuk>
+  )
+}
+
+// ── Kabuk: MLayout sarmalayıcı (nötr alt bar + geri sol üstte) ──────────────
+// 213/Sıra 11: MDevreDetay bir DETAY ekranı — bar var ama hiçbir sekme aktif
+// değil (altBarAktif=null). Geri butonu mdv-topbar içinde (sticky, sol üst).
+// icerikKaydir=false: mdv-root kendi scroll'unu yönetir (sticky topbar+tabs).
+function Kabuk({ children, kullanici, onMenu, drawerAcik, onDrawerKapat }) {
+  return (
+    <MLayout
+      icerikKaydir={false}
+      altBar
+      altBarAktif={null}
+      kullanici={kullanici}
+      onMenuClick={onMenu}
+      drawerAcik={drawerAcik}
+      onDrawerKapat={onDrawerKapat}
+    >
+      {children}
+    </MLayout>
   )
 }
