@@ -1,12 +1,15 @@
 // mobile/src/screens/MAnasayfaYonetici.jsx
 // Yönetici/super_admin anasayfası.
 // Önceki MAnasayfa.jsx'in içeriği + üstte "İşlem Başlat" butonu.
+//
+// 213/Sıra 11: Ortak iskelet MLayout'a taşındı (s.sayfa + s.scroll kalktı).
+//   Topbar slot olarak MLayout'a geçirilir; MDrawer'ı MLayout mount eder.
 
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useT } from '../lib/i18n'
-import MDrawer from '../components/MDrawer'
+import MLayout from '../components/MLayout'
 import MMarkLogo from '../components/MMarkLogo'
 
 export default function MAnasayfaYonetici({ kullanici }) {
@@ -115,142 +118,143 @@ export default function MAnasayfaYonetici({ kullanici }) {
     alert(tv('m_toast_yakinda', '{sayfa} sayfası yakında').replace('{sayfa}', sayfa))
   }
 
+  // ── Topbar (slot) ──
+  const topbar = (
+    <div style={s.topbar}>
+      <MMarkLogo style={s.topbarLogo} />
+      <div style={s.topbarTitle}>{tv('m_app_title', 'AresPipe')}</div>
+      <button
+        style={s.profilBtn}
+        onClick={() => setDrawerAcik(true)}
+        aria-label={tv('m_drawer_profil', 'Profil')}
+      >
+        {(kullanici?.ad_soyad || kullanici?.email || '?').charAt(0).toUpperCase()}
+      </button>
+    </div>
+  )
+
   return (
-    <div style={s.sayfa}>
-      {/* Topbar */}
-      <div style={s.topbar}>
-        <MMarkLogo style={s.topbarLogo} />
-        <div style={s.topbarTitle}>{tv('m_app_title', 'AresPipe')}</div>
+    <MLayout
+      topbar={topbar}
+      drawerAcik={drawerAcik}
+      onDrawerKapat={() => setDrawerAcik(false)}
+    >
+      {/* Hero */}
+      <div style={s.hero}>
+        <div style={s.heroGreeting}>{tv(selamlamaKey, 'Günaydın')}</div>
+        <div style={s.heroName}>
+          {kullanici?.ad_soyad || kullanici?.email || tv('m_kullanici', 'Kullanıcı')}
+        </div>
+        {rolLabel && <div style={s.heroMeta}>{rolLabel}</div>}
+      </div>
+
+      {/* İŞLEM BAŞLAT — dolu mavi buton (YÖNETİCİ'NİN OPERATÖR EKRANINA GEÇİŞ NOKTASI) */}
+      <div style={{ padding: '16px 16px 4px' }}>
         <button
-          style={s.profilBtn}
-          onClick={() => setDrawerAcik(true)}
-          aria-label={tv('m_drawer_profil', 'Profil')}
+          style={s.islemBaslatBtn}
+          onClick={() => navigate('/is-baslat')}
         >
-          {(kullanici?.ad_soyad || kullanici?.email || '?').charAt(0).toUpperCase()}
+          <div style={s.islemBaslatIkon}>⚡</div>
+          <div style={s.islemBaslatBody}>
+            <div style={s.islemBaslatBaslik}>
+              {tv('m_islem_baslat', 'İşlem Başlat')}
+            </div>
+            <div style={s.islemBaslatAlt}>
+              {tv('m_islem_baslat_alt', 'Kesim, imalat, KK, sevk...')}
+            </div>
+          </div>
+          <div style={s.islemBaslatOk}>›</div>
         </button>
       </div>
 
-      <div style={s.scroll}>
-
-        {/* Hero */}
-        <div style={s.hero}>
-          <div style={s.heroGreeting}>{tv(selamlamaKey, 'Günaydın')}</div>
-          <div style={s.heroName}>
-            {kullanici?.ad_soyad || kullanici?.email || tv('m_kullanici', 'Kullanıcı')}
+      {/* Uyarı banner */}
+      {istatistik.durdurulmus > 0 && (
+        <button style={s.uyariBanner} onClick={() => yakinda(tv('m_uyarilar', 'Uyarılar'))}>
+          <div style={s.uyariIcon}>⚠️</div>
+          <div style={s.uyariText}>
+            {tv('m_uyari_durdurulmus_spool', '{n} durdurulmuş spool var — detayları inceleyin')
+              .replace('{n}', istatistik.durdurulmus)}
           </div>
-          {rolLabel && <div style={s.heroMeta}>{rolLabel}</div>}
-        </div>
+          <div style={s.uyariArrow}>›</div>
+        </button>
+      )}
 
-        {/* İŞLEM BAŞLAT — dolu mavi buton (YÖNETİCİ'NİN OPERATÖR EKRANINA GEÇİŞ NOKTASI) */}
-        <div style={{ padding: '16px 16px 4px' }}>
-          <button
-            style={s.islemBaslatBtn}
-            onClick={() => navigate('/is-baslat')}
-          >
-            <div style={s.islemBaslatIkon}>⚡</div>
-            <div style={s.islemBaslatBody}>
-              <div style={s.islemBaslatBaslik}>
-                {tv('m_islem_baslat', 'İşlem Başlat')}
-              </div>
-              <div style={s.islemBaslatAlt}>
-                {tv('m_islem_baslat_alt', 'Kesim, imalat, KK, sevk...')}
-              </div>
-            </div>
-            <div style={s.islemBaslatOk}>›</div>
-          </button>
-        </div>
+      {/* Atıl kullanıcı bandı (MK-207.2) — 30+ gün giriş yok */}
+      {istatistik.atil > 0 && (
+        <button
+          style={{ ...s.uyariBanner, background: 'rgba(245,158,11,.1)', border: '1px solid var(--warn)' }}
+          onClick={() => yakinda(tv('m_uyarilar', 'Uyarılar'))}
+        >
+          <div style={s.uyariIcon}>😴</div>
+          <div style={{ ...s.uyariText, color: 'var(--warn)' }}>
+            {tv('m_uyari_atil_kullanici', '{n} kullanıcı 30+ gündür giriş yapmadı')
+              .replace('{n}', istatistik.atil)}
+          </div>
+          <div style={{ ...s.uyariArrow, color: 'var(--warn)' }}>›</div>
+        </button>
+      )}
 
-        {/* Uyarı banner */}
-        {istatistik.durdurulmus > 0 && (
-          <button style={s.uyariBanner} onClick={() => yakinda(tv('m_uyarilar', 'Uyarılar'))}>
-            <div style={s.uyariIcon}>⚠️</div>
-            <div style={s.uyariText}>
-              {tv('m_uyari_durdurulmus_spool', '{n} durdurulmuş spool var — detayları inceleyin')
-                .replace('{n}', istatistik.durdurulmus)}
-            </div>
-            <div style={s.uyariArrow}>›</div>
-          </button>
-        )}
-
-        {/* Atıl kullanıcı bandı (MK-207.2) — 30+ gün giriş yok */}
-        {istatistik.atil > 0 && (
-          <button
-            style={{ ...s.uyariBanner, background: 'rgba(245,158,11,.1)', border: '1px solid var(--warn)' }}
-            onClick={() => yakinda(tv('m_uyarilar', 'Uyarılar'))}
-          >
-            <div style={s.uyariIcon}>😴</div>
-            <div style={{ ...s.uyariText, color: 'var(--warn)' }}>
-              {tv('m_uyari_atil_kullanici', '{n} kullanıcı 30+ gündür giriş yapmadı')
-                .replace('{n}', istatistik.atil)}
-            </div>
-            <div style={{ ...s.uyariArrow, color: 'var(--warn)' }}>›</div>
-          </button>
-        )}
-
-        {/* Genel Durum */}
-        <div style={s.sectionRow}>
-          <div style={s.sectionTitle}>{tv('m_baslik_genel_durum', 'Genel Durum')}</div>
-        </div>
-
-        <div style={s.quickGrid}>
-          <StatKart renk="var(--ac)"   label={tv('m_stat_aktif_devre', 'Aktif Devre')}     deger={istatistik.devre}    sub={tv('m_stat_aktif_devre_sub', 'Devam eden')}       onClick={() => navigate('/devreler')} />
-          <StatKart renk="var(--warn)" label={tv('m_stat_bekleyen_spool', 'Bekleyen Spool')} deger={istatistik.bekleyen} sub={tv('m_stat_bekleyen_spool_sub', 'İşlem gerekiyor')} onClick={() => navigate('/devreler')} />
-          <StatKart renk="var(--leg)"  label={tv('m_stat_kk_bekleyen', 'KK Bekleyen')}       deger={istatistik.kk}        sub={tv('m_stat_kk_bekleyen_sub', 'Onay bekliyor')}   onClick={() => navigate('/devreler')} />
-          <StatKart renk="var(--gr)"   label={tv('m_stat_bu_ay_sevk', 'Bu Ay Sevk')}         deger={istatistik.sevk}      sub={tv('m_stat_bu_ay_sevk_sub', 'Tamamlandı')}       onClick={() => yakinda(tv('m_kart_sevkiyat', 'Sevkiyat'))} />
-        </div>
-
-        <div style={s.separator} />
-
-        {/* Son Aktiviteler */}
-        <div style={s.sectionRow}>
-          <div style={s.sectionTitle}>{tv('m_baslik_son_aktiviteler', 'Son Aktiviteler')}</div>
-        </div>
-
-        <div style={s.aktiviteWrap}>
-          {aktiviteYukleniyor ? (
-            <div style={s.bosDurum}>•••</div>
-          ) : aktiviteler && aktiviteler.length > 0 ? (
-            aktiviteler.map((l, i) => (
-              <div key={i} style={{
-                ...s.aktiviteItem,
-                borderBottom: i === aktiviteler.length - 1 ? 'none' : '1px solid var(--bor)',
-              }}>
-                <div style={{ ...s.aktiviteDot, background: renkIslem(l.islem) }} />
-                <div style={s.aktiviteBody}>
-                  <div style={s.aktiviteTitle}>{l.katman || '—'}</div>
-                  <div style={s.aktiviteSub}>{l.islem || '—'}</div>
-                </div>
-                <div style={s.aktiviteTime}>{formatSure(l.olusturma)}</div>
-              </div>
-            ))
-          ) : (
-            <div style={s.bosDurum}>
-              <div style={{ fontSize: 32, marginBottom: 8 }}>📋</div>
-              <div>{tv('m_aktivite_yok', 'Henüz aktivite yok')}</div>
-            </div>
-          )}
-        </div>
-
-        {/* Uygulamalar — yönetici için ikincil erişim (§5) */}
-        <div style={s.sectionRow}>
-          <div style={s.sectionTitle}>{tv('m_uyg_basligi', 'Uygulamalar')}</div>
-        </div>
-        <div style={{ padding: '0 16px' }}>
-          <button style={s.uygLink} onClick={() => navigate('/uygulamalar')}>
-            <div style={s.uygIkon}>📚</div>
-            <div style={s.uygBody}>
-              <div style={s.uygBaslik}>{tv('m_uyg_basligi', 'Uygulamalar')}</div>
-              <div style={s.uygAlt}>{tv('m_uyg_basligi_alt', 'Uygulamalarınız')}</div>
-            </div>
-            <div style={s.uygOk}>›</div>
-          </button>
-        </div>
-
-        <div style={{ height: 'calc(16px + env(safe-area-inset-bottom))' }} />
+      {/* Genel Durum */}
+      <div style={s.sectionRow}>
+        <div style={s.sectionTitle}>{tv('m_baslik_genel_durum', 'Genel Durum')}</div>
       </div>
 
-      <MDrawer acik={drawerAcik} kapat={() => setDrawerAcik(false)} />
-    </div>
+      <div style={s.quickGrid}>
+        <StatKart renk="var(--ac)"   label={tv('m_stat_aktif_devre', 'Aktif Devre')}     deger={istatistik.devre}    sub={tv('m_stat_aktif_devre_sub', 'Devam eden')}       onClick={() => navigate('/devreler')} />
+        <StatKart renk="var(--warn)" label={tv('m_stat_bekleyen_spool', 'Bekleyen Spool')} deger={istatistik.bekleyen} sub={tv('m_stat_bekleyen_spool_sub', 'İşlem gerekiyor')} onClick={() => navigate('/devreler')} />
+        <StatKart renk="var(--leg)"  label={tv('m_stat_kk_bekleyen', 'KK Bekleyen')}       deger={istatistik.kk}        sub={tv('m_stat_kk_bekleyen_sub', 'Onay bekliyor')}   onClick={() => navigate('/devreler')} />
+        <StatKart renk="var(--gr)"   label={tv('m_stat_bu_ay_sevk', 'Bu Ay Sevk')}         deger={istatistik.sevk}      sub={tv('m_stat_bu_ay_sevk_sub', 'Tamamlandı')}       onClick={() => yakinda(tv('m_kart_sevkiyat', 'Sevkiyat'))} />
+      </div>
+
+      <div style={s.separator} />
+
+      {/* Son Aktiviteler */}
+      <div style={s.sectionRow}>
+        <div style={s.sectionTitle}>{tv('m_baslik_son_aktiviteler', 'Son Aktiviteler')}</div>
+      </div>
+
+      <div style={s.aktiviteWrap}>
+        {aktiviteYukleniyor ? (
+          <div style={s.bosDurum}>•••</div>
+        ) : aktiviteler && aktiviteler.length > 0 ? (
+          aktiviteler.map((l, i) => (
+            <div key={i} style={{
+              ...s.aktiviteItem,
+              borderBottom: i === aktiviteler.length - 1 ? 'none' : '1px solid var(--bor)',
+            }}>
+              <div style={{ ...s.aktiviteDot, background: renkIslem(l.islem) }} />
+              <div style={s.aktiviteBody}>
+                <div style={s.aktiviteTitle}>{l.katman || '—'}</div>
+                <div style={s.aktiviteSub}>{l.islem || '—'}</div>
+              </div>
+              <div style={s.aktiviteTime}>{formatSure(l.olusturma)}</div>
+            </div>
+          ))
+        ) : (
+          <div style={s.bosDurum}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>📋</div>
+            <div>{tv('m_aktivite_yok', 'Henüz aktivite yok')}</div>
+          </div>
+        )}
+      </div>
+
+      {/* Uygulamalar — yönetici için ikincil erişim (§5) */}
+      <div style={s.sectionRow}>
+        <div style={s.sectionTitle}>{tv('m_uyg_basligi', 'Uygulamalar')}</div>
+      </div>
+      <div style={{ padding: '0 16px' }}>
+        <button style={s.uygLink} onClick={() => navigate('/uygulamalar')}>
+          <div style={s.uygIkon}>📚</div>
+          <div style={s.uygBody}>
+            <div style={s.uygBaslik}>{tv('m_uyg_basligi', 'Uygulamalar')}</div>
+            <div style={s.uygAlt}>{tv('m_uyg_basligi_alt', 'Uygulamalarınız')}</div>
+          </div>
+          <div style={s.uygOk}>›</div>
+        </button>
+      </div>
+
+      <div style={{ height: 'calc(16px + env(safe-area-inset-bottom))' }} />
+    </MLayout>
   )
 }
 
@@ -273,10 +277,9 @@ function renkIslem(islem) {
   return 'var(--warn)'
 }
 
-/* ─── Stiller ─── */
+/* ─── Stiller (s.sayfa/s.scroll MLayout'a taşındı) ─── */
 
 const s = {
-  sayfa: { height: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', color: 'var(--tx)' },
   topbar: {
     flexShrink: 0,
     display: 'flex',
@@ -294,16 +297,6 @@ const s = {
     flexShrink: 0,
   },
   topbarTitle: { flex: 1, fontSize: 16, fontWeight: 700, color: 'var(--tx)' },
-  topbarBtn: {
-    background: 'transparent',
-    border: 'none',
-    color: 'var(--tx)',
-    padding: 8,
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   profilBtn: {
     width: 40, height: 40, borderRadius: 20,
     background: 'var(--sur2)',
@@ -314,7 +307,6 @@ const s = {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     flexShrink: 0,
   },
-  scroll: { flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' },
   hero: {
     background: 'var(--sur)',
     borderBottom: '1px solid var(--bor)',
